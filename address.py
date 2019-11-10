@@ -8,8 +8,8 @@ import requests
 from pprint import pprint
 from bs4 import BeautifulSoup
 
-LIMITS = 4
-# LIMITS = False
+# LIMITS = 4
+LIMITS = False
 
 
 # class Address:
@@ -36,47 +36,54 @@ def _get(url):
     return content
 
 
+# def get_uik(value):
+#     result = {}
+#     for key, val in value.items():
+#         response = _get(f'http://www.cikrf.ru/services/lk_address/{val}?do=result').content.decode('CP1251')
+#         substr = 'Номер Территориальной избирательной комиссии: '
+#         start = response.find(substr)
+#         if start == -1:
+#             continue
+#         end = response[start:].find('<')
+#         uik = response[start+len(substr):start+end]
+#         result.update({key: int(uik)})
+#     return result
+
 def get_uik(value):
-    result = {}
-    for key, val in value.items():
-        response = _get(f'http://www.cikrf.ru/services/lk_address/{val}?do=result').content.decode('CP1251')
-        substr = 'Номер Территориальной избирательной комиссии: '
-        start = response.find(substr)
-        if start == -1:
-            continue
-        end = response[start:].find('<')
-        uik = response[start+len(substr):start+end]
-        result.update({key: int(uik)})
-    return result
+    response = _get(f'http://www.cikrf.ru/services/lk_address/{value}?do=result').content.decode('CP1251')
+    substr = 'Номер Территориальной избирательной комиссии: '
+    start = response.find(substr)
+    if start == -1:
+        return -1
+    end = response[start:].find('<')
+    uik = response[start+len(substr):start+end]
+    return int(uik)
 
 
-deeps = {0: 'Область',
+patterns = {5: {0: 'Область',
+         1: 'Район', 2: 'Поселение', 3: 'Дом', 4: 'Квартира',},
+            6: {0: 'Область',
          1: 'Административный район',
          2: 'Поселение/Город',
          3: 'Район',
          4: 'Улица',
-         5: 'Дом'}
+         5: 'Дом',
+         6: 'Квартира'}}
 
 
-# def tree(values, address={}, deep=0):
-def tree(values, address, deep=0):
-    # print(deep, address)
-    # sleep(1)
+def tree(values, address: dict = {}, deep=0):
     result = {}
     i = 0
     for value in values:
         response = get_data('http://www.cikrf.ru/services/lk_tree/?id=', value['id'])
-        # address.update({deep: value['text']})
-        # if deep == 5:
-        #     breakpoint()
-        # address = {key: address[key] for key in address.keys() if key<=deep+1}
+        level_id = int(value['a_attr']['levelid'])
+        address.update({level_id: value['text']})
+
+        address = {key: address[key] for key in address.keys() if key <= level_id}
         if len(response):
-            # result.update(tree(response, address, deep + 1))
-            result.update(tree(response, f'{address} {value["text"]}', deep+1))
+            result.update(tree(response, address, deep + 1))
         else:
-            # final_key = key + [value['text']]
-            # result.update({' '.join(address.values()): value['a_attr']['intid']})
-            result.update({f'{address} {value["text"]}': value['a_attr']['intid']})
+            result.update({address.values(): get_uik(value['a_attr']['intid'])})
         i += 1
         if LIMITS and i > LIMITS:
             break
@@ -87,10 +94,19 @@ def get_uiks_address():
     data = get_data('http://www.cikrf.ru/services/lk_tree/?', 'first=1&id=%23')
     data = [data[0]['children'][37]]
     # data = data[0]['children'][0]
-    # res = tree(data, {}, 0)
-    res = tree(data, 'Россия', 0)
+    res = tree(data, {}, 0)
+    uiks = {}
+    for address, uik in res.items():
+        key = tuple(list(address)[:-1])
+        if len(key[-1]) > 5:
+            uiks.update({address: {'place': [], 'uiks': [uik]}})
+            continue
+        if key not in uiks.keys():
+            uiks.update({key: {'place': [], 'uiks': []}})
+        uiks[key]['place'].append(list(address)[-1])
+        uiks[key]['uiks'] = list(set(uiks[key]['uiks']+[uik]))
     # pprint(res)
-    return get_uik(res)
+    return uiks
 
 
 def option_replace(value=''):
@@ -153,7 +169,7 @@ def get_population():
 
 
 uiks = get_uiks_address()
-print(set(uiks.values()))
+# print(set(uiks.values()))
 pops = get_population()
-print(set(pops.keys()))
+# print(set(pops.keys()))
 breakpoint()
