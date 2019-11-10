@@ -1,25 +1,45 @@
+import hashlib
+import pickle
 import re
+from pathlib import Path
+from time import sleep
 
 import requests
 from pprint import pprint
 from bs4 import BeautifulSoup
 
 LIMITS = 4
+# LIMITS = False
 
-class Address:
-    def get_addresses_by_coords(self):
-        pass
+
+# class Address:
+#     def get_addresses_by_coords(self):
+#         pass
 
 
 def get_data(url, id=''):
-    content = requests.get(f'{url}{id}')
+    content = _get(f'{url}{id}')
     return content.json()
+
+
+def _get(url):
+    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+    cachefile = Path(f'cache/{url_hash}.pickle')
+    if cachefile.exists():
+        with open(cachefile.absolute(), 'rb') as f:
+            content = pickle.load(f)
+    else:
+        print(f'GET {url}')
+        content = requests.get(url)
+        with open(cachefile.absolute(), 'wb') as f:
+            pickle.dump(content, f)
+    return content
 
 
 def get_uik(value):
     result = {}
     for key, val in value.items():
-        response = requests.get(f'http://www.cikrf.ru/services/lk_address/{val}?do=result').content.decode('CP1251')
+        response = _get(f'http://www.cikrf.ru/services/lk_address/{val}?do=result').content.decode('CP1251')
         substr = 'Номер Территориальной избирательной комиссии: '
         start = response.find(substr)
         if start == -1:
@@ -30,17 +50,35 @@ def get_uik(value):
     return result
 
 
-def tree(values, key, deep):
+deeps = {0: 'Область',
+         1: 'Административный район',
+         2: 'Поселение/Город',
+         3: 'Район',
+         4: 'Улица',
+         5: 'Дом'}
+
+
+# def tree(values, address={}, deep=0):
+def tree(values, address, deep=0):
+    # print(deep, address)
+    # sleep(1)
     result = {}
     i = 0
     for value in values:
         response = get_data('http://www.cikrf.ru/services/lk_tree/?id=', value['id'])
+        # address.update({deep: value['text']})
+        # if deep == 5:
+        #     breakpoint()
+        # address = {key: address[key] for key in address.keys() if key<=deep+1}
         if len(response):
-            result.update(tree(response, f'{key} {value["text"]}', deep+1))
+            # result.update(tree(response, address, deep + 1))
+            result.update(tree(response, f'{address} {value["text"]}', deep+1))
         else:
-            result.update({f'{key} {value["text"]}': value['a_attr']['intid']})
+            # final_key = key + [value['text']]
+            # result.update({' '.join(address.values()): value['a_attr']['intid']})
+            result.update({f'{address} {value["text"]}': value['a_attr']['intid']})
         i += 1
-        if i > LIMITS:
+        if LIMITS and i > LIMITS:
             break
     return result
 
@@ -49,6 +87,7 @@ def get_uiks_address():
     data = get_data('http://www.cikrf.ru/services/lk_tree/?', 'first=1&id=%23')
     data = [data[0]['children'][37]]
     # data = data[0]['children'][0]
+    # res = tree(data, {}, 0)
     res = tree(data, 'Россия', 0)
     # pprint(res)
     return get_uik(res)
@@ -59,7 +98,8 @@ def option_replace(value=''):
 
 
 def get_soap_data(url=''):
-    data = requests.get(url).content.decode('cp1251')
+    # data = requests.get(url).content.decode('cp1251')
+    data = _get(url).content.decode('cp1251')
     return BeautifulSoup(data, features="html.parser")
 
 
@@ -80,7 +120,7 @@ def get_result(soap):
             result = page_result.find('td', text=re.compile(
                 'Число избирателей, включенных в список избирателей')).parent.find(
                 'b').text
-            return result
+            return int(result)
 
 
 def soap_tree(soap):
@@ -100,7 +140,7 @@ def soap_tree(soap):
         else:
             result = soap_tree(get_soap_data(next))
         i += 1
-        if i > LIMITS:
+        if LIMITS and i > LIMITS:
             break
     return result
 
@@ -113,6 +153,7 @@ def get_population():
 
 
 uiks = get_uiks_address()
+print(set(uiks.values()))
 pops = get_population()
-print(set(uiks.values()), set(pops.keys()))
+print(set(pops.keys()))
 breakpoint()
