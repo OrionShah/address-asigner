@@ -1,11 +1,15 @@
 import hashlib
 import pickle
 import re
+import os
+from multiprocessing.pool import Pool
 from pathlib import Path
 from time import sleep
 
 import requests
 from pprint import pprint
+
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 
 # LIMITS = 4
@@ -29,25 +33,12 @@ def _get(url):
         with open(cachefile.absolute(), 'rb') as f:
             content = pickle.load(f)
     else:
-        print(f'GET {url}')
+        print(f'{os.getpid()} GET {url}')
         content = requests.get(url)
         with open(cachefile.absolute(), 'wb') as f:
             pickle.dump(content, f)
     return content
 
-
-# def get_uik(value):
-#     result = {}
-#     for key, val in value.items():
-#         response = _get(f'http://www.cikrf.ru/services/lk_address/{val}?do=result').content.decode('CP1251')
-#         substr = 'Номер Территориальной избирательной комиссии: '
-#         start = response.find(substr)
-#         if start == -1:
-#             continue
-#         end = response[start:].find('<')
-#         uik = response[start+len(substr):start+end]
-#         result.update({key: int(uik)})
-#     return result
 
 def get_uik(value):
     response = _get(f'http://www.cikrf.ru/services/lk_address/{value}?do=result').content.decode('CP1251')
@@ -74,27 +65,48 @@ patterns = {5: {0: 'Область',
 def tree(values, address: dict = {}, deep=0):
     result = {}
     i = 0
-    for value in values:
-        response = get_data('http://www.cikrf.ru/services/lk_tree/?id=', value['id'])
-        level_id = int(value['a_attr']['levelid'])
-        address.update({level_id: value['text']})
-
-        address = {key: address[key] for key in address.keys() if key <= level_id}
-        if len(response):
-            result.update(tree(response, address, deep + 1))
-        else:
-            result.update({address.values(): get_uik(value['a_attr']['intid'])})
-        i += 1
-        if LIMITS and i > LIMITS:
-            break
+    if deep == 1:
+        with Pool(40) as pool:
+            res = []
+            for value in values:
+                res.append(pool.apply_async(_tree, (value, address, deep)))
+                i += 1
+                if LIMITS and i > LIMITS:
+                    break
+            for ret in res:
+                result.update(ret.get())
+    # elif deep == 2:
+    #     for value in tqdm(values, desc=f'{os.getpid()}'):
+    #         result.update(_tree(value, address, deep))
+    #         i += 1
+    #         if LIMITS and i > LIMITS:
+    #             break
+    else:
+        for value in values:
+            result.update(_tree(value, address, deep))
+            i += 1
+            if LIMITS and i > LIMITS:
+                break
     return result
 
+
+def _tree(value, address, deep):
+    response = get_data('http://www.cikrf.ru/services/lk_tree/?id=',
+                        value['id'])
+    level_id = int(value['a_attr']['levelid'])
+    address.update({level_id: value['text']})
+
+    address = {key: address[key] for key in address.keys() if key <= level_id}
+    if len(response):
+        return tree(response, address, deep+1)
+    else:
+        return {tuple(address.values()): get_uik(value['a_attr']['intid'])}
 
 def get_uiks_address():
     data = get_data('http://www.cikrf.ru/services/lk_tree/?', 'first=1&id=%23')
     data = [data[0]['children'][37]]
     # data = data[0]['children'][0]
-    res = tree(data, {}, 0)
+    res = tree(data, {})
     uiks = {}
     for address, uik in res.items():
         key = tuple(list(address)[:-1])
