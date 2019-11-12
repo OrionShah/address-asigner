@@ -5,6 +5,7 @@ import os
 from multiprocessing.pool import Pool
 from pathlib import Path
 from time import sleep
+from urllib.parse import urlencode
 
 import requests
 from pprint import pprint
@@ -14,16 +15,21 @@ from bs4 import BeautifulSoup
 
 # LIMITS = 4
 LIMITS = False
+Y_APIKEY = 'c811583b-f5cc-4274-9aa9-f4ae01a3cbfa'
 
-
-# class Address:
-#     def get_addresses_by_coords(self):
-#         pass
+YA_ERROR = True
 
 
 def get_data(url, id=''):
     content = _get(f'{url}{id}')
     return content.json()
+
+
+def _del_cache(url):
+    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+    cachefile = Path(f'cache/{url_hash}.pickle')
+    if cachefile.exists():
+        os.remove(cachefile.absolute())
 
 
 def _get(url):
@@ -35,6 +41,8 @@ def _get(url):
     else:
         print(f'{os.getpid()} GET {url}')
         content = requests.get(url)
+        if content.status_code > 200:
+            return content
         with open(cachefile.absolute(), 'wb') as f:
             pickle.dump(content, f)
     return content
@@ -49,17 +57,6 @@ def get_uik(value):
     end = response[start:].find('<')
     uik = response[start+len(substr):start+end]
     return int(uik)
-
-
-patterns = {5: {0: 'Область',
-         1: 'Район', 2: 'Поселение', 3: 'Дом', 4: 'Квартира',},
-            6: {0: 'Область',
-         1: 'Административный район',
-         2: 'Поселение/Город',
-         3: 'Район',
-         4: 'Улица',
-         5: 'Дом',
-         6: 'Квартира'}}
 
 
 def tree(values, address: dict = {}, deep=0):
@@ -100,7 +97,28 @@ def _tree(value, address, deep):
     if len(response):
         return tree(response, address, deep+1)
     else:
-        return {tuple(address.values()): get_uik(value['a_attr']['intid'])}
+        coords = _get_coords(', '.join(address.values()))
+        uik = get_uik(value['a_attr']['intid'])
+        return {tuple(address.values()): (uik, coords)}
+
+
+def _get_coords(address):
+    pos = ()
+    if YA_ERROR:
+        return pos
+    params = urlencode({'apikey': Y_APIKEY, 'geocode': address,
+                        'format': 'json'})
+    url = f'https://geocode-maps.yandex.ru/1.x/?{params}'
+    response = _get(url).json()
+    if 'response' not in response.keys():
+        _del_cache(url)
+        return pos
+
+    member = response['response']['GeoObjectCollection']['featureMember']
+    if len(member):
+        pos = member[0]['GeoObject']['Point']['pos'].split(' ')
+    return pos
+
 
 def get_uiks_address():
     data = get_data('http://www.cikrf.ru/services/lk_tree/?', 'first=1&id=%23')
@@ -108,13 +126,15 @@ def get_uiks_address():
     # data = data[0]['children'][0]
     res = tree(data, {})
     uiks = {}
-    for address, uik in res.items():
+    for address, uik_coords in res.items():
+        uik, coords = uik_coords
         key = tuple(list(address)[:-1])
         if len(key[-1]) > 5:
-            uiks.update({address: {'place': [], 'uiks': [uik]}})
+            uiks.update({address: {'coords': coords, 'place': [],
+                                   'uiks': [uik]}})
             continue
         if key not in uiks.keys():
-            uiks.update({key: {'place': [], 'uiks': []}})
+            uiks.update({key: {'coords': coords, 'place': [], 'uiks': []}})
         uiks[key]['place'].append(list(address)[-1])
         uiks[key]['uiks'] = list(set(uiks[key]['uiks']+[uik]))
     # pprint(res)
