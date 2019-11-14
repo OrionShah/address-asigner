@@ -1,7 +1,6 @@
 stages:
   - test
 
-
 codestyle:
   stage: test
   image: git.webpp.ru:4567/tools/codestyle

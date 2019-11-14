@@ -4,20 +4,22 @@ import re
 import os
 from multiprocessing.pool import Pool
 from pathlib import Path
-from time import sleep
 from urllib.parse import urlencode
 
 import requests
 from pprint import pprint
 
-from tqdm import tqdm
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
-# LIMITS = 4
+# LIMITS = 11
 LIMITS = False
 Y_APIKEY = 'c811583b-f5cc-4274-9aa9-f4ae01a3cbfa'
 
 YA_ERROR = True
+
+# cached = Path(f'cache/')
+# process = tqdm(total=len(os.listdir('cache')))
 
 
 def get_data(url, id=''):
@@ -32,16 +34,26 @@ def _del_cache(url):
         os.remove(cachefile.absolute())
 
 
-def _get(url):
+def _get(url, update=False):
     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
     cachefile = Path(f'cache/{url_hash}.pickle')
-    if cachefile.exists():
+    if cachefile.exists() and not update:
         with open(cachefile.absolute(), 'rb') as f:
-            content = pickle.load(f)
+            # print(f'load cache {url}')
+            try:
+                content = pickle.load(f)
+                # process.update(1)
+            except EOFError:
+                _del_cache(url)
+                update = True
+        if update or content.status_code != 200:
+            print(f'force update cache {url}')
+            return _get(url, True)
     else:
         print(f'{os.getpid()} GET {url}')
         content = requests.get(url)
-        if content.status_code > 200:
+        if content.status_code != 200:
+            print(f'cache not save {url}')
             return content
         with open(cachefile.absolute(), 'wb') as f:
             pickle.dump(content, f)
@@ -62,7 +74,9 @@ def get_uik(value):
 def tree(values, address: dict = {}, deep=0):
     result = {}
     i = 0
+    # print(deep, len(values))
     if deep == 1:
+    # if deep == 5:
         with Pool(40) as pool:
             res = []
             for value in values:
@@ -72,12 +86,6 @@ def tree(values, address: dict = {}, deep=0):
                     break
             for ret in res:
                 result.update(ret.get())
-    # elif deep == 2:
-    #     for value in tqdm(values, desc=f'{os.getpid()}'):
-    #         result.update(_tree(value, address, deep))
-    #         i += 1
-    #         if LIMITS and i > LIMITS:
-    #             break
     else:
         for value in values:
             result.update(_tree(value, address, deep))
@@ -88,8 +96,11 @@ def tree(values, address: dict = {}, deep=0):
 
 
 def _tree(value, address, deep):
-    response = get_data('http://www.cikrf.ru/services/lk_tree/?id=',
-                        value['id'])
+    try:
+        response = get_data('http://www.cikrf.ru/services/lk_tree/?id=',
+                            value['id'])
+    except:
+        return {}
     level_id = int(value['a_attr']['levelid'])
     address.update({level_id: value['text']})
 
@@ -200,8 +211,8 @@ def get_population():
     return soap_tree(data)
 
 
-uiks = get_uiks_address()
-# print(set(uiks.values()))
+# uiks = get_uiks_address()
+# pprint(set(uiks.values()))
 pops = get_population()
 # print(set(pops.keys()))
 breakpoint()
