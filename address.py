@@ -4,7 +4,10 @@ import re
 import os
 from multiprocessing.pool import Pool
 from pathlib import Path
+
 from urllib.parse import urlencode
+
+import typing
 
 import requests
 from pprint import pprint
@@ -65,6 +68,7 @@ def get_uik(value):
     substr = 'Номер Территориальной избирательной комиссии: '
     start = response.find(substr)
     if start == -1:
+        breakpoint()
         return -1
     end = response[start:].find('<')
     uik = response[start+len(substr):start+end]
@@ -75,7 +79,7 @@ def tree(values, address: dict = {}, deep=0):
     result = {}
     i = 0
     # print(deep, len(values))
-    if deep == 1:
+    if deep == -1:
     # if deep == 5:
         with Pool(40) as pool:
             res = []
@@ -163,56 +167,75 @@ def get_soap_data(url=''):
 
 
 def find_next(soap):
-    if len(soap.find_all('option')):
-        return 'ok'
-
     for link in soap.find_all('a'):
         if link.text == 'сайт избирательной комиссии субъекта Российской Федерации':
             return option_replace(link['href'])
+        if link.text == 'Итоги голосования':
+            return option_replace(link['href'])
+    if len(soap.find_all('option')):
+        return 'ok'
     return None
 
 
 def get_result(soap):
+    # for link in soap.find_all('a'):
+    #     if link.text == 'Итоги голосования':
+    #         page_result = get_soap_data(option_replace(link.get('href')))
+    block_result = soap.find('td', text=re.compile(
+        'Число избирателей, включенных в список избирателей'))
+    result = 0
+    if block_result:
+        result = int(block_result.parent.find('b').text)
+    # else:
+    #     breakpoint()
     for link in soap.find_all('a'):
         if link.text == 'Итоги голосования':
             page_result = get_soap_data(option_replace(link.get('href')))
-            result = page_result.find('td', text=re.compile(
-                'Число избирателей, включенных в список избирателей')).parent.find(
-                'b').text
-            return int(result)
+            res = get_result(page_result)
+            if res:
+                result = res
+    return result
 
 
 def soap_tree(soap):
     result = {}
     i = 0
+    if not soap.find_all('option'):
+        pass
+
     for option in soap.find_all('option'):
         if option.text == '---':
             continue
 
         data = get_soap_data(option_replace(option['value']))
-        next = find_next(data)
-        if next == 'ok':
+        next_page = find_next(data)
+        if next_page == 'ok':
             result.update(soap_tree(data))
-        elif not next:
+        elif not next_page:
             key = option.text[option.text.find('№')+1:]
-            result.update({int(key): get_result(data)})
+            # breakpoint()
+            result.update({int(key): {'people': get_result(data)}})
         else:
-            result = soap_tree(get_soap_data(next))
+            child_data = {'next': soap_tree(get_soap_data(next_page)), 'people': get_result(data)}
+            # breakpoint()
+            result.update({option.contents[0]: child_data})
         i += 1
         if LIMITS and i > LIMITS:
             break
+
     return result
 
 
 def get_population():
+    url = 'http://www.volgograd.vybory.izbirkom.ru/region/volgograd?action=show&root_a=342000014&vrn=100100084849062&region=34&global=true&type=0&sub_region=34&root=1000034&prver=0&pronetvd=null&tvd=100100084849160'
     # url = 'http://www.vybory.izbirkom.ru/region/izbirkom?action=show&global=true&root=1000034&tvd=100100084849160&vrn=100100084849062&prver=0&pronetvd=null&region=0&sub_region=0&type=469&vibid=100100084849160'
-    url = 'http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100084849066&vrn=100100084849062&region=0&global=true&sub_region=0&prver=0&pronetvd=null&vibid=100100084849066&type=469'
+    # url = 'http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100084849066&vrn=100100084849062&region=0&global=true&sub_region=0&prver=0&pronetvd=null&vibid=100100084849066&type=469'
     data = get_soap_data(url)
     return soap_tree(data)
 
 
-# uiks = get_uiks_address()
+uiks = get_uiks_address()
 # pprint(set(uiks.values()))
-pops = get_population()
+# pops = get_population()
 # print(set(pops.keys()))
 breakpoint()
