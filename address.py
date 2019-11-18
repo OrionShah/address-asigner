@@ -65,10 +65,10 @@ def _get(url, update=False):
 
 def get_uik(value):
     response = _get(f'http://www.cikrf.ru/services/lk_address/{value}?do=result').content.decode('CP1251')
-    substr = 'Номер Территориальной избирательной комиссии: '
+    # substr = 'Номер Территориальной избирательной комиссии: '
+    substr = 'Участковая избирательная комиссия №'
     start = response.find(substr)
     if start == -1:
-        breakpoint()
         return -1
     end = response[start:].find('<')
     uik = response[start+len(substr):start+end]
@@ -79,7 +79,7 @@ def tree(values, address: dict = {}, deep=0):
     result = {}
     i = 0
     # print(deep, len(values))
-    if deep == -1:
+    if deep == 1:
     # if deep == 5:
         with Pool(40) as pool:
             res = []
@@ -235,7 +235,14 @@ def get_population():
 
 
 uiks = get_uiks_address()
+uiks_unique = set([loc['uiks'][0] for key,loc in uiks.items()])
 # pprint(set(uiks.values()))
-# pops = get_population()
+pops = get_population()
+used_uiks = set()
+for key,pop in pops.items():
+    for uik in pop['next'].keys():
+        used_uiks.add(uik)
 # print(set(pops.keys()))
+
+difference = used_uiks - uiks_unique
 breakpoint()
