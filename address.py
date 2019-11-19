@@ -236,12 +236,22 @@ def get_population():
 
 uiks = get_uiks_address()
 uiks_unique = set([loc['uiks'][0] for key,loc in uiks.items()])
-# pprint(set(uiks.values()))
+
 pops = get_population()
 used_uiks = set()
+final_uiks = {}
+
 for key,pop in pops.items():
     for uik in pop['next'].keys():
+        print(uik)
+        final_uiks.update({uik: {'houses': {}, 'places': 0, 'people': pop['next'][uik]['people']}})
+
+        for key,val in uiks.items():
+            if val['uiks'] == [uik]:
+                final_uiks[uik]['houses'].update({key: val})
+                final_uiks[uik]['places'] += len(val['place']) if val['place'] else 1
         used_uiks.add(uik)
+# pprint(set(uiks.values()))
 # print(set(pops.keys()))
 
 difference = used_uiks - uiks_unique
