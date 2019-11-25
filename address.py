@@ -14,6 +14,7 @@ from pprint import pprint
 
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+from redis import Redis
 
 # LIMITS = 11
 LIMITS = False
@@ -146,12 +147,12 @@ def get_uiks_address():
         key = tuple(list(address)[:-1])
         if len(key[-1]) > 5:
             uiks.update({address: {'coords': coords, 'place': [],
-                                   'uiks': [uik]}})
+                                   'uik': uik}})
             continue
         if key not in uiks.keys():
-            uiks.update({key: {'coords': coords, 'place': [], 'uiks': []}})
+            uiks.update({key: {'coords': coords, 'place': [], 'uik': None}})
         uiks[key]['place'].append(list(address)[-1])
-        uiks[key]['uiks'] = list(set(uiks[key]['uiks']+[uik]))
+        uiks[key]['uik'] = uik
     # pprint(res)
     return uiks
 
@@ -235,24 +236,28 @@ def get_population():
 
 
 uiks = get_uiks_address()
-uiks_unique = set([loc['uiks'][0] for key,loc in uiks.items()])
+# uiks_unique = set([loc['uik'] for key,loc in uiks.items()])
 
 pops = get_population()
-used_uiks = set()
+# used_uiks = set()
 final_uiks = {}
 
-for key,pop in pops.items():
-    for uik in pop['next'].keys():
-        print(uik)
+for key,pop in tqdm(pops.items(), desc='pops'):
+    for uik in tqdm(pop['next'].keys(), desc='uiks'):
+        # print(uik)
         final_uiks.update({uik: {'houses': {}, 'places': 0, 'people': pop['next'][uik]['people']}})
 
         for key,val in uiks.items():
-            if val['uiks'] == [uik]:
+            if val['uik'] == uik:
                 final_uiks[uik]['houses'].update({key: val})
                 final_uiks[uik]['places'] += len(val['place']) if val['place'] else 1
-        used_uiks.add(uik)
+        # used_uiks.add(uik)
 # pprint(set(uiks.values()))
 # print(set(pops.keys()))
 
-difference = used_uiks - uiks_unique
+redis = Redis()
+for uik in tqdm(final_uiks.keys()):
+    redis.set(f'uik-{uik}', pickle.dumps(final_uiks[uik]))
+
+# difference = used_uiks - uiks_unique
 breakpoint()
