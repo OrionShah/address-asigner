@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        td {
+            border: 1px solid black;
+            padding: 5px;
+        }
+    </style>
+    <title>index</title>
+</head>
+<body>
+<h2>{{ uikkey }}</h2>
+places: {{ uik['places'] }}
+<br>
+people: {{ uik['people'] }}
+<br>
+generated: {{ uik['generated'] }}
+<table>
+    <thead>
+    <tr>
+        <th>#</th>
+        <th>адрес</th>
+        <th>места</th>
+        <th>координаты</th>
+        <th>жителей</th>
+    </tr>
+    </thead>
+    <tbody>
+        {% for house in uik['houses'] %}
+        <tr>
+            <td>{{ house['i'] }}</td>
+            <td>{{ house['address'] }}</td>
+            <td>{{ house['place'] }}</td>
+            <td>{{ house['coords'] }}</td>
+            <td>{{ house['people'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

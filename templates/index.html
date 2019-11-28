@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Список УИКов</title>
+</head>
+<body>
+{% for uik in uiks %}
+<a href="/{{ uik }}">Участок {{ uik }}</a><br>
+{% endfor %}
+</body>
+</html>

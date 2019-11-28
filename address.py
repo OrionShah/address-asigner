@@ -255,6 +255,7 @@ for key,pop in tqdm(pops.items(), desc='pops'):
 # pprint(set(uiks.values()))
 # print(set(pops.keys()))
 
+# redis = Redis(host='redis')
 redis = Redis()
 for uik in tqdm(final_uiks.keys()):
     redis.set(f'uik-{uik}', pickle.dumps(final_uiks[uik]))
