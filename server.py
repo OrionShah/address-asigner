@@ -1,79 +1,71 @@
 import pickle
 import random
 
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request, redirect
 from redis import Redis
+
+from app import tasks
+from app.address import get_children, prepare_parents
+from app.population import get_region_link, get_uik_data
 
 app = Flask(__name__)
 app.debug = True
 
 
+@app.route('/process', defaults={'service_id': None}, methods=['GET'])
+@app.route('/process/<service_id>', methods=['GET'])
+def children(service_id: str):
+    services = service_id.split('-') if service_id else [None]
+    debug = False
+    if 'debug' in request.args.keys():
+        debug = request.args['debug'] == '1'
+    return render_template('process_list.html',
+                           children=get_children(services[-1],service_id),
+                           service_id=service_id, debug=debug)
+    # return jsonify(children)
+    # страница с запуском обработки (мб рекурсивное отображение для обработки
+    # только части адресов? ай хорош, нраица идея =) )
+    pass
+
+
+@app.route('/process/<service_id>', methods=['POST'])
+def start_process(service_id):
+    services = service_id.split('-')
+    parents = prepare_parents(services)
+
+    tasks.process_node.delay(services[-1], parents)
+    tasks.process_population.delay(get_region_link(parents[2]))
+
+    url = '-'.join(services[0:-1])
+    return redirect(f'/process/{url}', code=302)
+
+
+@app.route('/test')
+def test():
+    redis = Redis(host='redis')
+    keys = []
+    for addr_key in redis.keys('*'):
+        keys.append(addr_key.decode('utf-8'))
+        # redis.delete(addr_key)
+    return jsonify({'1len': len(keys), 'keys':keys[:10]})
+    # data = redis.lrange('uik-addresses-733', 0, redis.llen('uik-addresses-733'))
+    # data = redis.lrange('uik-addresses-733', 0, 10)
+    # data = pickle.loads(redis.get('uik-addresses-733'))
+    # data = pickle.loads(redis.get('address-734-, Волгоградская область, город Волгоград, Библиотечная, 17, 1, 734'))
+    # return jsonify([pickle.loads(el) for el in data])
+
+
 @app.route('/')
 def index():
-    # redis = Redis(host='redis')
-    redis = Redis()
+    redis = Redis(host='redis')
     uiks = [key.decode('utf-8') for key in redis.keys('uik-*')]
+    uiks = list(filter(lambda x: 'address' not in x, uiks))
     return render_template('index.html', uiks=uiks)
 
 
 @app.route('/<uikkey>')
 def uik(uikkey):
-    # redis = Redis(host='redis')
-    redis = Redis()
-
-    uik = pickle.loads(redis.get(uikkey))
-    houses = []
-    i = 1
-    generated = 0
-    addrs = generate_people(uik['people'], uik['places'])
-    last = 0
-    for addr, data in uik['houses'].items():
-        place = ', '.join(data['place']) if len(data['place']) else '-'
-        coords = ','.join(data['coords'])
-
-        places = len(data['place']) if len(data['place']) else 1
-        people = sum([v for k,v in addrs.items() if last <= k < last+places])
-        last += places
-        generated += people
-
-        data.update({'address': ', '.join(addr), 'place': place,
-                     'coords': coords, 'i': i, 'people': people})
-        houses.append(data)
-        i += 1
-    uik['houses'] = houses
-    uik['generated'] = generated
+    get_uik_data(uikkey)
     return render_template('uik.html', uik=uik, uikkey=uikkey)
 
 
-def generate_people(peoples: int, places: int):
-    if places < 1:
-        return {i: 0 for i in range(places)}
-    mid = int(round(peoples/places, 1))
-    addrs = {i: mid for i in range(places)}
-    buff = peoples - (places * mid)
-    i = 0
-    max_people = int(mid * 1.5)
-    while buff:
-        if max_people > addrs[i] > 4:
-            diff = random.randint(0, max_people-addrs[i])
-            if diff > buff:
-                diff = buff
-            buff -= diff
-            addrs[i] += diff
-        if addrs[i] > max_people:
-            diff = addrs[i] - random.randint(max_people-2, max_people+4)
-            if diff > buff:
-                diff = buff
-            buff += diff
-            addrs[i] -= diff
-        if addrs[i] < 2:
-            diff = random.randint(0, mid+1)
-            if diff > buff:
-                diff = buff
-            buff -= diff
-            addrs[i] += diff
-
-        i += 1
-        if i > places-1:
-            i = 0
-    return addrs

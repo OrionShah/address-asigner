@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Регион</title>
+    <style>
+        .child-list {
+            columns: 4;
+        }
+
+        .child-list > li {
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+{% if not children %}
+<div>Нет данных для отображения</div>
+{% endif %}
+<ul class="child-list">
+{% for child in children %}
+    <li>
+        {% if child['level'] in [2,3, 4, 13] or debug %}
+        <form method="POST" action="/process/{{ child['url'] }}">
+            <a href="/process/{{ child['url'] }}">{{ child['text'] }}</a>
+            <button type="submit">Запустить обработку</button>
+        </form>
+        {% else %}
+        <a href="/process/{{ child['url'] }}">{{ child['text'] }}</a>
+        {% endif %}
+    </li>
+{% endfor %}
+</ul>
+</body>
+</html>

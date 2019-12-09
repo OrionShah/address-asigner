@@ -213,12 +213,10 @@ def soap_tree(soap):
         if next_page == 'ok':
             result.update(soap_tree(data))
         elif not next_page:
-            key = option.text[option.text.find('№')+1:]
-            # breakpoint()
-            result.update({int(key): {'people': get_result(data)}})
+            p_key = option.text[option.text.find('№')+1:]
+            result.update({int(p_key): {'people': get_result(data)}})
         else:
             child_data = {'next': soap_tree(get_soap_data(next_page)), 'people': get_result(data)}
-            # breakpoint()
             result.update({option.contents[0]: child_data})
         i += 1
         if LIMITS and i > LIMITS:
@@ -262,3 +260,6 @@ for uik in tqdm(final_uiks.keys()):
 
 # difference = used_uiks - uiks_unique
 breakpoint()
+
+
+# http://www.volgograd.vybory.izbirkom.ru/region/region/volgograd?action=show&vrn=100100084849062&vibid=4344007179654&type=226
