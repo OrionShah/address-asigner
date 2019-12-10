@@ -1,35 +1,54 @@
 # хранить в редисе как "номер участка"-"адрес"
+import pickle
+
 from celery import Celery
 
+from address import get_soap_data
 from app import utils, address, population
 
 app = Celery('tasks', broker='redis://redis:6379/0')
 
 
-@app.task(queue='tasks')
-def process_node(service_id, address_components: dict = {}):
+@app.task(queue='tasks', bind=True)
+def process_node(self, service_id, address_components: dict = {}, **kwargs):
     # обрабатывает адреса, собирая граф
-    address.start_process(service_id, address_components)
+    try:
+        address.start_process(service_id, address_components)
+    except Exception as exc:
+        self.retry(exc=exc, countdown=30)
 
 
-@app.task(queue='tasks')
-def save_address(value, address_components):
-    address.save(value, address_components)
+@app.task(queue='tasks', bind=True)
+def save_address(self, value, address_components, **kwargs):
+    try:
+        address.save(value, address_components)
+    except Exception as exc:
+        self.retry(exc=exc, countdown=30)
 
 
-@app.task(queue='tasks')
-def get_coords(detail_key):
-    utils.get_coords(detail_key)
+@app.task(queue='tasks', bind=True)
+def get_coords(self, detail_key, **kwargs):
     # добавить адресу координаты
+    try:
+        utils.get_coords(detail_key)
+    except Exception as exc:
+        self.retry(exc=exc, countdown=30)
 
 
-@app.task(queue='tasks')
-def process_population(url):
+@app.task(queue='tasks', bind=True)
+def process_population(self, url, **kwargs):
     # собираем данные по жителям
-    population.process_node(url)
+    try:
+        data = get_soap_data(url)
+        population.process_node(data)
+    except Exception as exc:
+        self.retry(exc=exc, countdown=30)
 
 
-@app.task(queue='tasks')
-def process_uik(uik, region):
+@app.task(queue='tasks', bind=True)
+def process_uik(self, uik, region, **kwargs):
     # собрать инфу по избирательному участку
-    utils.get_uik_info(uik, region)
+    try:
+        utils.get_uik_info(uik, region)
+    except Exception as exc:
+        self.retry(exc=exc, countdown=30)

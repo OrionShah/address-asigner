@@ -32,11 +32,15 @@ def get_region_link(region):
     return links[region]
 
 
-def process_node(url):
-    soap = get_soap_data(url)
+def process_node(soap):
+    # soap = get_soap_data(url)
 
     result = {}
     if not soap.find_all('option'):
+        # p_key = soap.text[soap.text.find('№') + 1:]
+        # redis = Redis(host='redis')
+        # redis.set(f'uik-population-{p_key}', get_result(soap))
+        print('not option')
         pass
 
     for option in soap.find_all('option'):
@@ -45,15 +49,19 @@ def process_node(url):
 
         data = get_soap_data(option_replace(option['value']))
         next_page = find_next(data)
+        print(option_replace(option['value']), next_page)
         if next_page == 'ok':
+            print('ok')
             tasks.process_population.delay(option_replace(option['value']))
             # result.update(process_node(data))
         elif not next_page:
+            print('save')
             p_key = option.text[option.text.find('№')+1:]
             redis = Redis(host='redis')
             redis.set(f'uik-population-{p_key}', get_result(data))
             # result.update({int(p_key): {'people': get_result(data)}})
         else:
+            print('else Oo')
             tasks.process_population.delay(next_page)
             # child_data = {'next': process_node(get_soap_data(next_page)), 'people': get_result(data)}
             # result.update({option.contents[0]: child_data})
@@ -125,29 +133,37 @@ def generate_people(peoples: int, places: int):
     return addrs
 
 
+def get_addresses(uikkey):
+    redis = Redis(host='redis')
+    redis_key = f'uik-addresses-{uikkey}'
+    adresses = redis.lrange(redis_key, 0, redis.llen(redis_key))
+    adresses = list(map(lambda x: pickle.loads(x), adresses))
+    return adresses
+
 def get_uik_data(uikkey):
     redis = Redis(host='redis')
 
-    uik = pickle.loads(redis.get(uikkey))
+    uik = pickle.loads(redis.get(f'uik-{uikkey}'))
+    adresses = get_addresses(uikkey)
     houses = []
     i = 1
     generated = 0
-    addrs = generate_people(uik['people'], uik['places'])
-    last = 0
-    for addr, data in uik['houses'].items():
-        place = ', '.join(data['place']) if len(data['place']) else '-'
-        coords = ','.join(data['coords'])
-
-        places = len(data['place']) if len(data['place']) else 1
-        people = sum(
-            [v for k, v in addrs.items() if last <= k < last + places])
-        last += places
-        generated += people
-
-        data.update({'address': ', '.join(addr), 'place': place,
-                     'coords': coords, 'i': i, 'people': people})
-        houses.append(data)
-        i += 1
-    uik['houses'] = houses
-    uik['generated'] = generated
+    # addrs = generate_people(uik['people'], uik['places'])
+    # last = 0
+    # for addr, data in uik['houses'].items():
+    #     place = ', '.join(data['place']) if len(data['place']) else '-'
+    #     coords = ','.join(data['coords'])
+    #
+    #     places = len(data['place']) if len(data['place']) else 1
+    #     people = sum(
+    #         [v for k, v in addrs.items() if last <= k < last + places])
+    #     last += places
+    #     generated += people
+    #
+    #     data.update({'address': ', '.join(addr), 'place': place,
+    #                  'coords': coords, 'i': i, 'people': people})
+    #     houses.append(data)
+    #     i += 1
+    # uik['houses'] = houses
+    # uik['generated'] = generated
     return uik

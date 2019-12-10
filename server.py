@@ -6,7 +6,7 @@ from redis import Redis
 
 from app import tasks
 from app.address import get_children, prepare_parents
-from app.population import get_region_link, get_uik_data
+from app.population import get_region_link, get_uik_data, get_soap_data
 
 app = Flask(__name__)
 app.debug = True
@@ -33,7 +33,8 @@ def start_process(service_id):
     services = service_id.split('-')
     parents = prepare_parents(services)
 
-    tasks.process_node.delay(services[-1], parents)
+    # tasks.process_node.delay(services[-1], parents)
+
     tasks.process_population.delay(get_region_link(parents[2]))
 
     url = '-'.join(services[0:-1])
@@ -44,7 +45,7 @@ def start_process(service_id):
 def test():
     redis = Redis(host='redis')
     keys = []
-    for addr_key in redis.keys('*'):
+    for addr_key in redis.keys('address-*'):
         keys.append(addr_key.decode('utf-8'))
         # redis.delete(addr_key)
     return jsonify({'1len': len(keys), 'keys':keys[:10]})
@@ -59,13 +60,14 @@ def test():
 def index():
     redis = Redis(host='redis')
     uiks = [key.decode('utf-8') for key in redis.keys('uik-*')]
-    uiks = list(filter(lambda x: 'address' not in x, uiks))
+    uiks = filter(lambda x: 'address' not in x, uiks)
+    uiks = list(map(lambda x: x.replace('uik-', ''), uiks))
     return render_template('index.html', uiks=uiks)
 
 
 @app.route('/<uikkey>')
 def uik(uikkey):
-    get_uik_data(uikkey)
+    uik = get_uik_data(uikkey)
     return render_template('uik.html', uik=uik, uikkey=uikkey)
 
 

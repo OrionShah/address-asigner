@@ -32,13 +32,13 @@ def _get(url, update=False):
                 _del_cache(url)
                 update = True
         if update or content.status_code != 200:
-            print(f'force update cache {url}')
+            # print(f'force update cache {url}')
             return _get(url, True)
     else:
-        print(f'{os.getpid()} GET {url}')
+        # print(f'{os.getpid()} GET {url}')
         content = requests.get(url)
         if content.status_code != 200:
-            print(f'cache not save {url}')
+            # print(f'cache not save {url}')
             return content
         with open(cachefile.absolute(), 'wb') as f:
             pickle.dump(content, f)
@@ -58,7 +58,6 @@ def get_coords(detail_key):
     response = _get(url).json()
     if 'response' not in response.keys():
         _del_cache(url)
-        print(response)
         # TODO: откладывать задачу до начало суток, выставлять флаг в редисе
         raise Exception('Координаты не получены')
 

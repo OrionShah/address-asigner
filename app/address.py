@@ -40,6 +40,7 @@ def prepare_parents(services):
                 break
     return address
 
+
 def get_uiks_address():
     # DEBUG: удалить
     data = get_data('first=1&id=%23')
@@ -90,7 +91,7 @@ def save(value, address):
     redis.lpush(f'uik-addresses-{uik}', pickle.dumps(address))
 
     if not redis.get(f'uik-{uik}') and '2' in address['components'].keys():
-        print('delay process uik наконец-то')
+        # print('delay process uik наконец-то')
         tasks.process_uik.delay(uik, address['components']['2'])
     # tasks.get_coords.delay(detail_key)
 
