@@ -27,7 +27,7 @@ RUN set -x && \
 COPY . /app
 
 RUN set -x \
-    mkdir /app/cache
+    mkdir /app/cache && \
     chmod -R a+rX /app && \
     chown -R app:app /app
 
