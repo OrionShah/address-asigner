@@ -24,7 +24,7 @@ spec:
           - name: FLASK_ENV
             value: "development"
           - name: REDIS_HOST
-            value: "orionshah-redis.address-asigner-965"
+            value: "orionshah-redis"
       imagePullSecrets:
       - name: git.webpp.ru
 ---
@@ -61,7 +61,7 @@ spec:
           - name: FLASK_ENV
             value: "development"
           - name: REDIS_HOST
-            value: "orionshah-redis.address-asigner-965"
+            value: "orionshah-redis"
       imagePullSecrets:
       - name: git.webpp.ru
 ---
