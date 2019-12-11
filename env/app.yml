@@ -77,17 +77,6 @@ spec:
   ports:
   - port: 5000
     name: web
-  selector:
-    app: orionshah-$CI_COMMIT_REF_SLUG
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: orionshah-flower-$CI_COMMIT_REF_SLUG
-  labels:
-    app: orionshah-$CI_COMMIT_REF_SLUG
-spec:
-  ports:
   - port: 5555
     name: flower
   selector:
@@ -101,7 +90,6 @@ metadata:
     nginx.ingress.kubernetes.io/auth-type: basic
     nginx.ingress.kubernetes.io/auth-secret: basic-auth
     nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-    nginx.ingress.kubernetes.io/rewrite-target: "serviceName=orionshah-flower-$CI_COMMIT_REF_SLUG rewrite=/;"
 spec:
   rules:
   - host: $CI_COMMIT_REF_SLUG.orionshah.wppdev.ru
@@ -109,9 +97,23 @@ spec:
       paths:
       - path: "/"
         backend:
-          serviceName: orionshah-web-$CI_COMMIT_REF_SLUG
+          serviceName: orionshah-$CI_COMMIT_REF_SLUG
           servicePort: web
-      - path: "/flower"
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: orionshah-$CI_COMMIT_REF_SLUG-wppdev-flower
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  rules:
+  - host: $CI_COMMIT_REF_SLUG-flower.orionshah.wppdev.ru
+    http:
+      paths:
+      - path: "/"
         backend:
-          serviceName: orionshah-flower-$CI_COMMIT_REF_SLUG
+          serviceName: orionshah-$CI_COMMIT_REF_SLUG
           servicePort: flower
