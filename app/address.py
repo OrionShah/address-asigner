@@ -3,6 +3,7 @@ import pickle
 from redis import Redis
 
 from app import tasks
+from app.settings import REDIS_HOST
 from app.utils import _get, get_uik
 
 LIMITS = False
@@ -85,7 +86,7 @@ def save(value, address):
     address = {'components': address, 'uik': uik, 'name': address_str,
                'intid': value['intid']}
 
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     detail_key = f'address-{address_str}'
     redis.set(detail_key, pickle.dumps(address))
     redis.lpush(f'uik-addresses-{uik}', pickle.dumps(address))

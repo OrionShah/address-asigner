@@ -5,7 +5,7 @@ import re
 from bs4 import BeautifulSoup
 from redis import Redis
 
-from app import tasks
+from app.settings import REDIS_HOST
 from app.utils import _get
 
 
@@ -33,14 +33,7 @@ def get_region_link(region):
 
 
 def process_node(soap):
-    # soap = get_soap_data(url)
-
-    result = {}
     if not soap.find_all('option'):
-        # p_key = soap.text[soap.text.find('№') + 1:]
-        # redis = Redis(host='redis')
-        # redis.set(f'uik-population-{p_key}', get_result(soap))
-        print('not option')
         pass
 
     for option in soap.find_all('option'):
@@ -49,24 +42,15 @@ def process_node(soap):
 
         data = get_soap_data(option_replace(option['value']))
         next_page = find_next(data)
-        print(option_replace(option['value']), next_page)
         if next_page == 'ok':
-            print('ok')
-            tasks.process_population.delay(option_replace(option['value']))
-            # result.update(process_node(data))
+            process_node(data)
         elif not next_page:
-            print('save')
             p_key = option.text[option.text.find('№')+1:]
-            redis = Redis(host='redis')
+            redis = Redis(host=REDIS_HOST)
             redis.set(f'uik-population-{p_key}', get_result(data))
-            # result.update({int(p_key): {'people': get_result(data)}})
+            # result.update({int(p_key): pops})
         else:
-            print('else Oo')
-            tasks.process_population.delay(next_page)
-            # child_data = {'next': process_node(get_soap_data(next_page)), 'people': get_result(data)}
-            # result.update({option.contents[0]: child_data})
-
-    return result
+            process_node(get_soap_data(next_page))
 
 
 def find_next(soap):
@@ -134,14 +118,14 @@ def generate_people(peoples: int, places: int):
 
 
 def get_addresses(uikkey):
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     redis_key = f'uik-addresses-{uikkey}'
     adresses = redis.lrange(redis_key, 0, redis.llen(redis_key))
     adresses = list(map(lambda x: pickle.loads(x), adresses))
     return adresses
 
 def get_uik_data(uikkey):
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
 
     uik = pickle.loads(redis.get(f'uik-{uikkey}'))
     adresses = get_addresses(uikkey)

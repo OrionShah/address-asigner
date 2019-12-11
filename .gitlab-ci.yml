@@ -1,8 +1,42 @@
 stages:
   - test
+  - build
+  - staging
 
 codestyle:
   stage: test
   image: git.webpp.ru:4567/tools/codestyle
   script:
     - codestyle *.py
+  allow_failure: true
+
+update image:
+  stage: build
+  image: gcr.io/kaniko-project/executor:debug
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --cache=true --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+
+deploy-branch:
+  stage: staging
+  image: lwolf/helm-kubectl-docker:latest
+  when: manual
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: http://$CI_COMMIT_REF_SLUG.orionshah.wppdev.ru
+    on_stop: remove_remote_branch
+  script:
+    - kubectl config --kubeconfig=$KUBECONFIG use-context gitlab-deploy
+    - envsubst < env/app.yml | kubectl -n $KUBE_NAMESPACE delete -f - || true
+    - envsubst < env/app.yml | kubectl -n $KUBE_NAMESPACE apply -f -
+
+remove_remote_branch:
+  stage: staging
+  image: lwolf/helm-kubectl-docker:latest
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    action: stop
+  when: manual
+  script:
+    - kubectl config --kubeconfig=$KUBECONFIG use-context gitlab-deploy
+    - envsubst < env/kube-branch.yml | kubectl -n $KUBE_NAMESPACE delete -f - || true

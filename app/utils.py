@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import requests
 from redis import Redis
 
-from app.settings import regions
+from app.settings import regions, REDIS_HOST
 
 Y_APIKEY = 'c811583b-f5cc-4274-9aa9-f4ae01a3cbfa'
 
@@ -21,7 +21,7 @@ def _del_cache(url):
 
 def _get(url, update=False):
     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
-    cachefile = Path(f'cache/{url_hash}.pickle1')
+    cachefile = Path(f'cache/{url_hash}.pickle')
     if cachefile.exists() and not update:
         with open(cachefile.absolute(), 'rb') as f:
             # print(f'load cache {url}')
@@ -46,7 +46,7 @@ def _get(url, update=False):
 
 
 def get_coords(detail_key):
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     address = pickle.loads(redis.get(detail_key))
 
     # TODO: проверять флаг в редисе и сразу переставлять задачу на начало суток
@@ -85,7 +85,7 @@ def get_uik_info(uik, region):
     url = f'http://www.cikrf.ru/iservices/voter-services/committee/subjcode/{region_code}/num/{uik}'
     data = _get(url).json()
 
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     redis.set(f'uik-{uik}', pickle.dumps(data))
 
 

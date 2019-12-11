@@ -11,7 +11,7 @@ RUN set -x && \
     apk add --no-cache --update -t .build-deps build-base postgresql-dev libxml2-dev libxslt-dev linux-headers git \
                                                gcc musl-dev libjpeg-turbo-dev zlib-dev libffi-dev && \
     pip install --no-cache-dir --disable-pip-version-check pip==18.0 && \
-    pip install --no-cache-dir --disable-pip-version-check pipenv==2018.11.14 setuptools==40.0.0 && \
+    pip install --no-cache-dir --disable-pip-version-check pipenv==2018.11.14 setuptools==40.0.0 bash && \
     pipenv install --system --deploy && \
     runDeps="$( \
       scanelf --needed --nobanner --recursive /usr/local/lib/python3.7 \

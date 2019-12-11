@@ -214,10 +214,10 @@ def soap_tree(soap):
             result.update(soap_tree(data))
         elif not next_page:
             p_key = option.text[option.text.find('№')+1:]
-            result.update({int(p_key): {'people': get_result(data)}})
+            result.update({int(p_key): get_result(data)})
         else:
-            child_data = {'next': soap_tree(get_soap_data(next_page)), 'people': get_result(data)}
-            result.update({option.contents[0]: child_data})
+            # child_data = {'next': , 'people': get_result(data)}
+            result.update(soap_tree(get_soap_data(next_page)))
         i += 1
         if LIMITS and i > LIMITS:
             break
@@ -233,30 +233,30 @@ def get_population():
     return soap_tree(data)
 
 
-uiks = get_uiks_address()
+# uiks = get_uiks_address()
 # uiks_unique = set([loc['uik'] for key,loc in uiks.items()])
 
 pops = get_population()
 # used_uiks = set()
 final_uiks = {}
 
-for key,pop in tqdm(pops.items(), desc='pops'):
-    for uik in tqdm(pop['next'].keys(), desc='uiks'):
-        # print(uik)
-        final_uiks.update({uik: {'houses': {}, 'places': 0, 'people': pop['next'][uik]['people']}})
-
-        for key,val in uiks.items():
-            if val['uik'] == uik:
-                final_uiks[uik]['houses'].update({key: val})
-                final_uiks[uik]['places'] += len(val['place']) if val['place'] else 1
+# for key,pop in tqdm(pops.items(), desc='pops'):
+#     for uik in tqdm(pop['next'].keys(), desc='uiks'):
+#         # print(uik)
+#         final_uiks.update({uik: {'houses': {}, 'places': 0, 'people': pop['next'][uik]['people']}})
+#
+#         for key,val in uiks.items():
+#             if val['uik'] == uik:
+#                 final_uiks[uik]['houses'].update({key: val})
+#                 final_uiks[uik]['places'] += len(val['place']) if val['place'] else 1
         # used_uiks.add(uik)
 # pprint(set(uiks.values()))
 # print(set(pops.keys()))
 
 # redis = Redis(host='redis')
-redis = Redis()
-for uik in tqdm(final_uiks.keys()):
-    redis.set(f'uik-{uik}', pickle.dumps(final_uiks[uik]))
+# redis = Redis()
+# for uik in tqdm(final_uiks.keys()):
+#     redis.set(f'uik-{uik}', pickle.dumps(final_uiks[uik]))
 
 # difference = used_uiks - uiks_unique
 breakpoint()

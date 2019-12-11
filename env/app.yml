@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $CI_ENVIRONMENT_SLUG-orionshah-workers-http-$CI_COMMIT_REF_SLUG
+spec:
+  selector:
+    matchLabels:
+      app: orionshah-$CI_COMMIT_REF_SLUG
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: orionshah-$CI_COMMIT_REF_SLUG
+    spec:
+      nodeSelector:
+        env: apps
+      containers:
+      - name: worker-$CI_COMMIT_REF_SLUG
+        image: git.webpp.ru:4567/andrey.shahov/address-asigner:$CI_COMMIT_REF_SLUG
+        command: "celery -A app.tasks worker --loglevel=INFO --concurrency=1 -Q tasks --max-tasks-per-child=5  --prefetch-multiplier=1"
+        env:
+          - name: FLASK_APP
+            value: "server.py"
+          - name: FLASK_ENV
+            value: "development"
+          - name: REDIS_HOST
+            value: "orionshah-redis.address-asigner-965"
+      imagePullSecrets:
+      - name: git.webpp.ru
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $CI_ENVIRONMENT_SLUG-orionshah-http-$CI_COMMIT_REF_SLUG
+spec:
+  selector:
+    matchLabels:
+      app: orionshah-$CI_COMMIT_REF_SLUG
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: orionshah-$CI_COMMIT_REF_SLUG
+    spec:
+      nodeSelector:
+        env: apps
+      containers:
+      - name: orionshah-flower-$CI_COMMIT_REF_SLUG
+        image: mher/flower
+        command: ["flower", "--broker=redis://orionshah-redis.address-asigner-965:6379/0", '--address=0.0.0.0']
+        ports:
+          containerPort: 5555
+      - name: orionshah-web-$CI_COMMIT_REF_SLUG
+        image: git.webpp.ru:4567/andrey.shahov/address-asigner:$CI_COMMIT_REF_SLUG
+        command: "flask run -h 0.0.0.0 -p 5000"
+        ports:
+          containerPort: 5000
+        env:
+          - name: FLASK_APP
+            value: "server.py"
+          - name: FLASK_ENV
+            value: "development"
+          - name: REDIS_HOST
+            value: "orionshah-redis.address-asigner-965"
+      imagePullSecrets:
+      - name: git.webpp.ru
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orionshah-$CI_COMMIT_REF_SLUG
+  labels:
+    app: orionshah-$CI_COMMIT_REF_SLUG
+spec:
+  ports:
+  - port: 5000
+    protocol: TCP
+  - port: 5555
+    protocol: TCP
+  selector:
+    app: orionshah-$CI_COMMIT_REF_SLUG
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: orionshah-$CI_COMMIT_REF_SLUG-wppdev
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  rules:
+  - host: $CI_COMMIT_REF_SLUG.orionshah.wppdev.ru
+    http:
+      paths:
+      - path: "/"
+        backend:
+          serviceName: orionshah-$CI_COMMIT_REF_SLUG
+          servicePort: 5000
+      - path: "/flower"
+        backend:
+          serviceName: orionshah-$CI_COMMIT_REF_SLUG
+          servicePort: 5555

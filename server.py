@@ -1,12 +1,10 @@
-import pickle
-import random
-
 from flask import Flask, render_template, jsonify, request, redirect
 from redis import Redis
 
 from app import tasks
 from app.address import get_children, prepare_parents
-from app.population import get_region_link, get_uik_data, get_soap_data
+from app.population import get_region_link, get_uik_data
+from app.settings import REDIS_HOST
 
 app = Flask(__name__)
 app.debug = True
@@ -33,8 +31,7 @@ def start_process(service_id):
     services = service_id.split('-')
     parents = prepare_parents(services)
 
-    # tasks.process_node.delay(services[-1], parents)
-
+    tasks.process_node.delay(services[-1], parents)
     tasks.process_population.delay(get_region_link(parents[2]))
 
     url = '-'.join(services[0:-1])
@@ -43,7 +40,7 @@ def start_process(service_id):
 
 @app.route('/test')
 def test():
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     keys = []
     for addr_key in redis.keys('address-*'):
         keys.append(addr_key.decode('utf-8'))
@@ -58,9 +55,10 @@ def test():
 
 @app.route('/')
 def index():
-    redis = Redis(host='redis')
+    redis = Redis(host=REDIS_HOST)
     uiks = [key.decode('utf-8') for key in redis.keys('uik-*')]
     uiks = filter(lambda x: 'address' not in x, uiks)
+    uiks = filter(lambda x: 'population' not in x, uiks)
     uiks = list(map(lambda x: x.replace('uik-', ''), uiks))
     return render_template('index.html', uiks=uiks)
 
@@ -69,5 +67,3 @@ def index():
 def uik(uikkey):
     uik = get_uik_data(uikkey)
     return render_template('uik.html', uik=uik, uikkey=uikkey)
-
-
