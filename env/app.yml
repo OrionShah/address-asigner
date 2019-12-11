@@ -17,7 +17,7 @@ spec:
       containers:
       - name: worker-$CI_COMMIT_REF_SLUG
         image: git.webpp.ru:4567/andrey.shahov/address-asigner:$CI_COMMIT_REF_SLUG
-        command: "celery -A app.tasks worker --loglevel=INFO --concurrency=1 -Q tasks --max-tasks-per-child=5  --prefetch-multiplier=1"
+        command: ["celery", "-A", "app.tasks", "worker", "--loglevel=INFO", "--concurrency=1", "-Q", "tasks", "--max-tasks-per-child=5", "--prefetch-multiplier=1"]
         env:
           - name: FLASK_APP
             value: "server.py"
