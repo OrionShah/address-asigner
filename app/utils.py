@@ -19,29 +19,48 @@ def _del_cache(url):
         os.remove(cachefile.absolute())
 
 
+# def _get(url, update=False):
+#     # cachedir = Path('cache')
+#     # if not cachedir.exists():
+#     #     cachedir.mkdir()
+#     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+#     cachefile = Path(f'cache/{url_hash}.pickle')
+#     if cachefile.exists() and not update:
+#         with open(cachefile.absolute(), 'rb') as f:
+#             # print(f'load cache {url}')
+#             try:
+#                 content = pickle.load(f)
+#                 # process.update(1)
+#             except EOFError:
+#                 _del_cache(url)
+#                 update = True
+#         if update or content.status_code != 200:
+#             # print(f'force update cache {url}')
+#             return _get(url, True)
+#     else:
+#         # print(f'{os.getpid()} GET {url}')
+#         content = requests.get(url)
+#         if content.status_code != 200:
+#             # print(f'cache not save {url}')
+#             return content
+#         with open(cachefile.absolute(), 'wb') as f:
+#             pickle.dump(content, f)
+#     return content
+
 def _get(url, update=False):
     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
-    cachefile = Path(f'cache/{url_hash}.pickle')
-    if cachefile.exists() and not update:
-        with open(cachefile.absolute(), 'rb') as f:
-            # print(f'load cache {url}')
-            try:
-                content = pickle.load(f)
-                # process.update(1)
-            except EOFError:
-                _del_cache(url)
-                update = True
-        if update or content.status_code != 200:
-            # print(f'force update cache {url}')
-            return _get(url, True)
+    redis_key = f'cache-{url_hash}'
+    redis = Redis(host=REDIS_HOST)
+    redis_data = redis.get(redis_key)
+    if redis_data and not update:
+        print('cache')
+        content = pickle.loads(redis_data)
     else:
-        # print(f'{os.getpid()} GET {url}')
+        print('not cache')
         content = requests.get(url)
         if content.status_code != 200:
-            # print(f'cache not save {url}')
             return content
-        with open(cachefile.absolute(), 'wb') as f:
-            pickle.dump(content, f)
+        redis.set(redis_key, pickle.dumps(content))
     return content
 
 
