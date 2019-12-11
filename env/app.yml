@@ -74,9 +74,9 @@ metadata:
 spec:
   ports:
   - port: 5000
-    protocol: TCP
+    name: web
   - port: 5555
-    protocol: TCP
+    name: flower
   selector:
     app: orionshah-$CI_COMMIT_REF_SLUG
 ---
@@ -96,8 +96,8 @@ spec:
       - path: "/"
         backend:
           serviceName: orionshah-$CI_COMMIT_REF_SLUG
-          servicePort: 5000
+          servicePort: web
       - path: "/flower"
         backend:
           serviceName: orionshah-$CI_COMMIT_REF_SLUG
-          servicePort: 5555
+          servicePort: flower
