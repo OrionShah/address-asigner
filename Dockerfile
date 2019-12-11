@@ -1,8 +1,6 @@
 FROM python:3.7-alpine3.8
 MAINTAINER Sergey Levitin <selevit@gmail.com>
 
-RUN addgroup -g 10001 app && adduser -u 10001 -D -h /app -G app app
-
 COPY Pipfile /app
 COPY Pipfile.lock /app
 WORKDIR /app
