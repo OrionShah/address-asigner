@@ -48,7 +48,7 @@ def process_node(soap):
         elif not next_page:
             p_key = option.text[option.text.find('№')+1:]
             redis = Redis(host=REDIS_HOST)
-            people = int(round(get_result(data) * (1 + random.randint(1, 40)/100), 0))
+            people = int(round(get_result(data) * (1 + random.randint(2, 4)/10), 0))
             redis.set(f'uik-population-{p_key}', people)
         else:
             process_node(get_soap_data(next_page))

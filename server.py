@@ -1,4 +1,6 @@
-from flask import Flask, render_template, jsonify, request, redirect
+"""Точки входа для веба."""
+
+from flask import Flask, jsonify, redirect, render_template, request
 from redis import Redis
 
 from app import tasks
@@ -18,12 +20,8 @@ def children(service_id: str):
     if 'debug' in request.args.keys():
         debug = request.args['debug'] == '1'
     return render_template('process_list.html',
-                           children=get_children(services[-1],service_id),
+                           children=get_children(services[-1], service_id),
                            service_id=service_id, debug=debug)
-    # return jsonify(children)
-    # страница с запуском обработки (мб рекурсивное отображение для обработки
-    # только части адресов? ай хорош, нраица идея =) )
-    pass
 
 
 @app.route('/process/<service_id>', methods=['POST'])
@@ -45,11 +43,11 @@ def test():
     for addr_key in redis.keys('address-*'):
         keys.append(addr_key.decode('utf-8'))
         # redis.delete(addr_key)
-    return jsonify({'1len': len(keys), 'keys':keys[:10]})
-    # data = redis.lrange('uik-addresses-733', 0, redis.llen('uik-addresses-733'))
+    return jsonify({'1len': len(keys), 'keys': keys[:10]})
+    # data = redis.lrange('uik-addresses-733', 0,
+    #                     redis.llen('uik-addresses-733'))
     # data = redis.lrange('uik-addresses-733', 0, 10)
     # data = pickle.loads(redis.get('uik-addresses-733'))
-    # data = pickle.loads(redis.get('address-734-, Волгоградская область, город Волгоград, Библиотечная, 17, 1, 734'))
     # return jsonify([pickle.loads(el) for el in data])
 
 
@@ -59,8 +57,8 @@ def index():
     uiks = [key.decode('utf-8') for key in redis.keys('uik-*')]
     uiks = filter(lambda x: 'address' not in x, uiks)
     uiks = filter(lambda x: 'population' not in x, uiks)
-    uiks = list(map(lambda x: x.replace('uik-', ''), uiks))
-    return render_template('index.html', uiks=uiks)
+    uiks = list(map(lambda x: int(x.replace('uik-', '')), uiks))
+    return render_template('index.html', uiks=sorted(uiks))
 
 
 @app.route('/<uikkey>')
@@ -71,5 +69,5 @@ def uik(uikkey):
 
 @app.route('/<uikkey>', methods=['POST'])
 def process_uik(uikkey):
-    tasks.process_uik(uikkey)
+    tasks.process_uik.delay(uikkey)
     return redirect(f'/{uikkey}')
