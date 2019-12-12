@@ -47,9 +47,17 @@ def process_population(self, url, **kwargs):
 
 
 @app.task(**params)
-def process_uik(self, uik, region, **kwargs):
+def save_uik(self, uik, region, **kwargs):
     # собрать инфу по избирательному участку
     try:
-        utils.get_uik_info(uik, region)
+        population.get_uik_info(uik, region)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+
+@app.task(**params)
+def process_uik(self, uik):
+    try:
+        population.process_people(uik)
     except Exception as exc:
         self.retry(exc=exc)

@@ -42,7 +42,7 @@ def start_process(service_id):
 def test():
     redis = Redis(host=REDIS_HOST)
     keys = []
-    for addr_key in redis.keys('*pop*'):
+    for addr_key in redis.keys('address-*'):
         keys.append(addr_key.decode('utf-8'))
         # redis.delete(addr_key)
     return jsonify({'1len': len(keys), 'keys':keys[:10]})
@@ -67,3 +67,9 @@ def index():
 def uik(uikkey):
     uik = get_uik_data(uikkey)
     return render_template('uik.html', uik=uik, uikkey=uikkey)
+
+
+@app.route('/<uikkey>', methods=['POST'])
+def process_uik(uikkey):
+    tasks.process_uik(uikkey)
+    return redirect(f'/{uikkey}')

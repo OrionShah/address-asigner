@@ -42,28 +42,6 @@ def prepare_parents(services):
     return address
 
 
-def get_uiks_address():
-    # DEBUG: удалить
-    data = get_data('first=1&id=%23')
-    data = [data[0]['children'][37]]
-    # data = data[0]['children'][0]
-    process_node(data, {})
-    uiks = {}
-    # for address, uik_coords in res.items():
-    #     uik, coords = uik_coords
-    #     key = tuple(list(address)[:-1])
-    #     if len(key[-1]) > 5:
-    #         uiks.update({address: {'coords': coords, 'place': [],
-    #                                'uik': uik}})
-    #         continue
-    #     if key not in uiks.keys():
-    #         uiks.update({key: {'coords': coords, 'place': [], 'uik': None}})
-    #     uiks[key]['place'].append(list(address)[-1])
-    #     uiks[key]['uik'] = uik
-    # pprint(res)
-    return uiks
-
-
 def process_node(values, address: dict = {}):
     for value in values:
         response = get_data(f"id={value['id']}")
@@ -72,10 +50,8 @@ def process_node(values, address: dict = {}):
 
         address = {key: address[key] for key in address.keys() if int(key) <= level_id}
         if len(response):
-            # tasks.process_node(value['id'], address)
             tasks.process_node.delay(value['id'], address)
         else:
-            # записать в редис основной объект
             tasks.save_address.delay(value, address)
 
 
@@ -94,8 +70,7 @@ def save(value, address):
 
     redis.lpush(f'uik-addresses-{uik}', pickle.dumps(address))
     if not redis.get(f'uik-{uik}') and '2' in address['components'].keys():
-        tasks.process_uik.delay(uik, address['components']['2'])
-    # tasks.get_coords.delay(detail_key)
+        tasks.save_uik.delay(uik, address['components']['2'])
 
 
 def get_data(params=''):

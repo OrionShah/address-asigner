@@ -12,18 +12,20 @@
 </head>
 <body>
 <h2>{{ uik['name'] }}</h2>
-places: {{ uik['places'] }}
+Мест: {{ uik['places'] }}
 <br>
-people: {{ uik['people'] }}
+Жителей: {{ uik['people'] }}
 <br>
-generated: {{ uik['generated'] }}
+Распределено: {{ uik['generated'] }}
+<form method="POST" action="/{{ uikkey }}">
+    <button type="submit">Обработать</button>
+</form>
 <table>
     <thead>
     <tr>
         <th>#</th>
         <th>адрес</th>
         <th>места</th>
-        <th>координаты</th>
         <th>жителей</th>
     </tr>
     </thead>
@@ -33,7 +35,6 @@ generated: {{ uik['generated'] }}
             <td>{{ house['i'] }}</td>
             <td>{{ house['address'] }}</td>
             <td>{{ house['place'] }}</td>
-            <td>{{ house['coords'] }}</td>
             <td>{{ house['people'] }}</td>
         </tr>
         {% endfor %}

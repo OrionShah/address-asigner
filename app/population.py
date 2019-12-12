@@ -6,11 +6,14 @@ from collections import defaultdict
 from bs4 import BeautifulSoup
 from redis import Redis
 
-from app.settings import REDIS_HOST
+from app.settings import REDIS_HOST, regions
 from app.utils import _get
 
 
-ROOT_URL = 'http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100084849066&vrn=100100084849062&region=0&global=true&sub_region=0&prver=0&pronetvd=null&vibid=100100084849066&type=226'
+ROOT_URL = ('http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show'
+            '&root=1&tvd=100100084849066&vrn=100100084849062&region=0'
+            '&global=true&sub_region=0&prver=0&pronetvd=null'
+            '&vibid=100100084849066&type=226')
 
 
 def get_soap_data(url=''):
@@ -45,8 +48,8 @@ def process_node(soap):
         elif not next_page:
             p_key = option.text[option.text.find('№')+1:]
             redis = Redis(host=REDIS_HOST)
-            # TODO: добавить 10-40% рандомной в качестве детей
-            redis.set(f'uik-population-{p_key}', get_result(data))
+            people = int(round(get_result(data) * (1 + random.randint(1, 40)/100), 0))
+            redis.set(f'uik-population-{p_key}', people)
         else:
             process_node(get_soap_data(next_page))
 
@@ -115,29 +118,20 @@ def generate_people(peoples: int, places: int):
     return addrs
 
 
+def get_uik_addresses(uikkey):
+    redis = Redis(host=REDIS_HOST)
+    redis_key = f'addresses-processed-{uikkey}'
+    addresses = redis.lrange(redis_key, 0, redis.llen(redis_key))
+    addresses = list(map(lambda x: pickle.loads(x), addresses))
+    return addresses
+
+
 def get_addresses(uikkey):
     redis = Redis(host=REDIS_HOST)
     redis_key = f'uik-addresses-{uikkey}'
-    adresses = redis.lrange(redis_key, 0, redis.llen(redis_key))
-    adresses = list(map(lambda x: pickle.loads(x), adresses))
-    return adresses
+    addresses = redis.lrange(redis_key, 0, redis.llen(redis_key))
+    addresses = list(map(lambda x: pickle.loads(x), addresses))
 
-
-def get_population(uikkey):
-    redis = Redis(host=REDIS_HOST)
-    redis_key = f'uik-population-{uikkey}'
-    return int(redis.get(redis_key).decode('utf-8'))
-
-
-def get_uik_data(uikkey):
-    redis = Redis(host=REDIS_HOST)
-
-    uik = pickle.loads(redis.get(f'uik-{uikkey}'))
-    addresses = get_addresses(uikkey)
-    houses = []
-    i = 1
-    generated = 0
-    addrs = set()
     places = defaultdict(set)
     for address in addresses:
         components = address['components']
@@ -148,23 +142,64 @@ def get_uik_data(uikkey):
             place = components['11']
         addr_str = ', '.join(addr.values())
         places[addr_str].add(place)
-        addrs.add(addr_str)
 
-    uik['places'] = sum([len(place) for place in places.values()])
-    uik['people'] = get_population(uikkey)
-    addrs_people = generate_people(uik['people'], uik['places'])
+    return places
+
+
+def get_population(uikkey):
+    redis = Redis(host=REDIS_HOST)
+    redis_key = f'uik-population-{uikkey}'
+    return int(redis.get(redis_key).decode('utf-8'))
+
+
+def process_people(uikkey):
+    redis = Redis(host=REDIS_HOST)
+    uik = pickle.loads(redis.get(f'uik-{uikkey}'))
+
+    addresses = get_addresses(uikkey)
+
+    places = sum([len(place) for place in addresses.values()])
+    if not uik['people']:
+        uik['people'] = get_population(uikkey)
+    addrs_people = generate_people(uik['people'], places)
+
     last = 0
-    for addr in addrs:
-        place = ', '.join(sorted(places[addr]))
-
-        addr_places = len(places[addr])
-        people = sum([v for k, v in addrs_people.items() if last <= k < last + addr_places])
+    generated = 0
+    i = 0
+    redis.delete(f'addresses-processed-{uikkey}')
+    for addr in addresses.keys():
+        place = ', '.join(sorted(addresses[addr]))
+        addr_places = len(addresses[addr])
+        people = sum([v for k, v in addrs_people.items() if
+                      last <= k < last + addr_places])
         last += addr_places
         generated += people
-        # coords = ','.join(data['coords'])
-        houses.append({'address': addr, 'place': place, 'people': people, 'i': i})
 
+        house = pickle.dumps({'address': addr, 'place': place,
+                              'people': people, 'i': i})
+        redis.rpush(f'addresses-processed-{uikkey}', house)
+        redis.set(f'address-{uikkey}', house)
         i += 1
+
+    uik['places'] = sum([len(place) for place in addresses.values()])
     uik['generated'] = generated
-    uik['houses'] = houses
+    redis.set(f'uik-{uikkey}', pickle.dumps(uik))
+
+
+def get_uik_data(uikkey):
+    redis = Redis(host=REDIS_HOST)
+    uik = pickle.loads(redis.get(f'uik-{uikkey}'))
+    uik['houses'] = sorted(get_uik_addresses(uikkey), key=lambda x: x['i'])
     return uik
+
+
+def get_uik_info(uik, region):
+    region_code = regions[region]
+    url = ('http://www.cikrf.ru/iservices/voter-services/committee/'
+           f'subjcode/{region_code}/num/{uik}')
+    data = _get(url).json()
+    data['people'] = get_population(uik)
+    data['processed'] = 0
+
+    redis = Redis(host=REDIS_HOST)
+    redis.set(f'uik-{uik}', pickle.dumps(data))
