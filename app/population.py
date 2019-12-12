@@ -105,7 +105,7 @@ def generate_people(peoples: int, places: int):
                 diff = buff
             buff += diff
             addrs[i] -= diff
-        if addrs[i] < 2:
+        if addrs[i] <= 2:
             diff = random.randint(0, mid+1)
             if diff > buff:
                 diff = buff
