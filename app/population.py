@@ -10,7 +10,7 @@ from app.settings import REDIS_HOST
 from app.utils import _get
 
 
-ROOT_URL = 'http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100084849066&vrn=100100084849062&region=0&global=true&sub_region=0&prver=0&pronetvd=null&vibid=100100084849066&type=469'
+ROOT_URL = 'http://www.vybory.izbirkom.ru/region/region/izbirkom?action=show&root=1&tvd=100100084849066&vrn=100100084849062&region=0&global=true&sub_region=0&prver=0&pronetvd=null&vibid=100100084849066&type=226'
 
 
 def get_soap_data(url=''):
@@ -34,9 +34,6 @@ def get_region_link(region):
 
 
 def process_node(soap):
-    if not soap.find_all('option'):
-        pass
-
     for option in soap.find_all('option'):
         if option.text == '---':
             continue
@@ -49,7 +46,6 @@ def process_node(soap):
             p_key = option.text[option.text.find('№')+1:]
             redis = Redis(host=REDIS_HOST)
             redis.set(f'uik-population-{p_key}', get_result(data))
-            # result.update({int(p_key): pops})
         else:
             process_node(get_soap_data(next_page))
 
@@ -129,7 +125,7 @@ def get_addresses(uikkey):
 def get_population(uikkey):
     redis = Redis(host=REDIS_HOST)
     redis_key = f'uik-population-{uikkey}'
-    return redis.get(redis_key)
+    return int(redis.get(redis_key).decode('utf-8'))
 
 
 def get_uik_data(uikkey):
@@ -155,26 +151,19 @@ def get_uik_data(uikkey):
 
     uik['places'] = sum([len(place) for place in places.values()])
     uik['people'] = get_population(uikkey)
+    addrs_people = generate_people(uik['people'], uik['places'])
+    last = 0
     for addr in addrs:
         place = ', '.join(sorted(places[addr]))
-        houses.append({'address': addr, 'place': place, 'people': 0, 'i': i})
+
+        addr_places = len(places[addr])
+        people = sum([v for k, v in addrs_people.items() if last <= k < last + addr_places])
+        last += addr_places
+        generated += people
+        # coords = ','.join(data['coords'])
+        houses.append({'address': addr, 'place': place, 'people': people, 'i': i})
+
         i += 1
-    # addrs = generate_people(uik['people'], uik['places'])
-    # last = 0
-    # for addr, data in uik['houses'].items():
-    #     place = ', '.join(data['place']) if len(data['place']) else '-'
-    #     coords = ','.join(data['coords'])
-    #
-    #     places = len(data['place']) if len(data['place']) else 1
-    #     people = sum(
-    #         [v for k, v in addrs.items() if last <= k < last + places])
-    #     last += places
-    #     generated += people
-    #
-    #     data.update({'address': ', '.join(addr), 'place': place,
-    #                  'coords': coords, 'i': i, 'people': people})
-    #     houses.append(data)
-    #     i += 1
-    # uik['generated'] = generated
+    uik['generated'] = generated
     uik['houses'] = houses
     return uik

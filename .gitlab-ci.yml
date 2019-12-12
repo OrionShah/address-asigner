@@ -20,7 +20,6 @@ update image:
 deploy-branch:
   stage: staging
   image: lwolf/helm-kubectl-docker:latest
-  when: manual
   environment:
     name: $CI_COMMIT_REF_NAME
     url: http://$CI_COMMIT_REF_SLUG.orionshah.wppdev.ru
