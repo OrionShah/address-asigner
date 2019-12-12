@@ -159,7 +159,7 @@ def process_people(uikkey):
     addresses = get_addresses(uikkey)
 
     places = sum([len(place) for place in addresses.values()])
-    if not uik['people']:
+    if 'people' not in uik.keys() or not uik['people']:
         uik['people'] = get_population(uikkey)
     addrs_people = generate_people(uik['people'], places)
 
