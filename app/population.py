@@ -1,6 +1,7 @@
 import pickle
 import random
 import re
+from collections import defaultdict
 
 from bs4 import BeautifulSoup
 from redis import Redis
@@ -124,14 +125,40 @@ def get_addresses(uikkey):
     adresses = list(map(lambda x: pickle.loads(x), adresses))
     return adresses
 
+
+def get_population(uikkey):
+    redis = Redis(host=REDIS_HOST)
+    redis_key = f'uik-population-{uikkey}'
+    return redis.get(redis_key)
+
+
 def get_uik_data(uikkey):
     redis = Redis(host=REDIS_HOST)
 
     uik = pickle.loads(redis.get(f'uik-{uikkey}'))
-    adresses = get_addresses(uikkey)
+    addresses = get_addresses(uikkey)
     houses = []
     i = 1
     generated = 0
+    addrs = set()
+    places = defaultdict(set)
+    for address in addresses:
+        components = address['components']
+        addr = components.copy()
+        place = '-'
+        if '11' in components.keys():
+            del addr['11']
+            place = components['11']
+        addr_str = ', '.join(addr.values())
+        places[addr_str].add(place)
+        addrs.add(addr_str)
+
+    uik['places'] = sum([len(place) for place in places.values()])
+    uik['people'] = get_population(uikkey)
+    for addr in addrs:
+        place = ', '.join(sorted(places[addr]))
+        houses.append({'address': addr, 'place': place, 'people': 0, 'i': i})
+        i += 1
     # addrs = generate_people(uik['people'], uik['places'])
     # last = 0
     # for addr, data in uik['houses'].items():
@@ -148,6 +175,6 @@ def get_uik_data(uikkey):
     #                  'coords': coords, 'i': i, 'people': people})
     #     houses.append(data)
     #     i += 1
-    # uik['houses'] = houses
     # uik['generated'] = generated
+    uik['houses'] = houses
     return uik

@@ -42,7 +42,7 @@ def start_process(service_id):
 def test():
     redis = Redis(host=REDIS_HOST)
     keys = []
-    for addr_key in redis.keys('address-*'):
+    for addr_key in redis.keys('*pop*'):
         keys.append(addr_key.decode('utf-8'))
         # redis.delete(addr_key)
     return jsonify({'1len': len(keys), 'keys':keys[:10]})

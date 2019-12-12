@@ -53,10 +53,8 @@ def _get(url, update=False):
     redis = Redis(host=REDIS_HOST)
     redis_data = redis.get(redis_key)
     if redis_data and not update:
-        print('cache')
         content = pickle.loads(redis_data)
     else:
-        print('not cache')
         content = requests.get(url)
         if content.status_code != 200:
             return content
