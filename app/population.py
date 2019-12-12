@@ -45,6 +45,7 @@ def process_node(soap):
         elif not next_page:
             p_key = option.text[option.text.find('№')+1:]
             redis = Redis(host=REDIS_HOST)
+            # TODO: добавить 10-40% рандомной в качестве детей
             redis.set(f'uik-population-{p_key}', get_result(data))
         else:
             process_node(get_soap_data(next_page))
