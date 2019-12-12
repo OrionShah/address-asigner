@@ -98,13 +98,9 @@ def get_uik(value):
 
 
 def get_uik_info(uik, region):
-    region_code = get_region_code(region)
+    region_code = regions[region]
     url = f'http://www.cikrf.ru/iservices/voter-services/committee/subjcode/{region_code}/num/{uik}'
     data = _get(url).json()
 
     redis = Redis(host=REDIS_HOST)
     redis.set(f'uik-{uik}', pickle.dumps(data))
-
-
-def get_region_code(region):
-    return regions[region]

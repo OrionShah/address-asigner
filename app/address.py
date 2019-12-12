@@ -89,10 +89,11 @@ def save(value, address):
     redis = Redis(host=REDIS_HOST)
     detail_key = f'address-{address_str}'
     redis.set(detail_key, pickle.dumps(address))
-    redis.lpush(f'uik-addresses-{uik}', pickle.dumps(address))
+    if uik == -1:
+        return
 
+    redis.lpush(f'uik-addresses-{uik}', pickle.dumps(address))
     if not redis.get(f'uik-{uik}') and '2' in address['components'].keys():
-        # print('delay process uik наконец-то')
         tasks.process_uik.delay(uik, address['components']['2'])
     # tasks.get_coords.delay(detail_key)
 
