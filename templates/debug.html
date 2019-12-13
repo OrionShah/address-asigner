@@ -29,8 +29,37 @@
             center: [48.72, 44.51],
             // Уровень масштабирования. Допустимые значения:
             // от 0 (весь мир) до 19.
-            zoom: 11
+            zoom: 15
+        },{
+            // В нашем примере активные области есть только для 9 и 10 масштаба.
+            // Поэтому ограничим диапазон коэффициентов масштабирования карты.
+            minZoom: 15,
+            maxZoom: 16
         });
+
+        var domain = 'http://localhost:5000',
+
+        tileUrlTemplate = 'datalayer/?tile_x=%x&y=%y',
+
+        // Шаблон callback-функции, в которую сервер будет оборачивать данные тайла.
+        // Пример callback-функции после подстановки - 'testCallback_tile_x_1_y_2_z_9'.
+        keyTemplate = 'testCallback_tile_%c',
+
+        // URL тайлов картиночного слоя.
+        // Пример URL после подстановки -
+        // '.../hotspot_layer/images/9/tile_x=1&y=2.png'.
+        imgUrlTemplate = 'examples/maps/ru/hotspot_layer/images/%z/tile_x=%x&y=%y.png',
+
+        // Создадим источник данных слоя активных областей.
+        objSource = new ymaps.hotspot.ObjectSource(tileUrlTemplate, keyTemplate),
+
+        // Создаем картиночный слой и слой активных областей.
+        imgLayer = new ymaps.Layer(imgUrlTemplate, {tileTransparent: true}),
+        hotspotLayer = new ymaps.hotspot.Layer(objSource, {cursor: 'help'});
+
+        // Добавляем слои на карту.
+        myMap.layers.add(hotspotLayer);
+        // myMap.layers.add(imgLayer);
 
         myMap.events.add('click', function (e) {
             var coords = e.get('coords');
@@ -72,15 +101,17 @@
                 myPlacemark.properties
                     .set({
                         // Формируем строку с данными об объекте.
-                        iconCaption: [
-                            // Название населенного пункта или вышестоящее административно-территориальное образование.
-                            firstGeoObject.getLocalities().length ? firstGeoObject.getLocalities() : firstGeoObject.getAdministrativeAreas(),
-                            // Получаем путь до топонима, если метод вернул null, запрашиваем наименование здания.
-                            firstGeoObject.getThoroughfare() || firstGeoObject.getPremise(),
-                            firstGeoObject.getAddressLine()
-                        ].filter(Boolean).join(', '),
+                        // iconCaption: [
+                        //     // Название населенного пункта или вышестоящее административно-территориальное образование.
+                        //     firstGeoObject.getLocalities().length ? firstGeoObject.getLocalities() : firstGeoObject.getAdministrativeAreas(),
+                        //     // Получаем путь до топонима, если метод вернул null, запрашиваем наименование здания.
+                        //     firstGeoObject.getThoroughfare() || firstGeoObject.getPremise(),
+                        //     firstGeoObject.getAddressLine()
+                        // ].filter(Boolean).join(', '),
+                        iconCaption: firstGeoObject.geometry._coordinates.join(', '),
                         // В качестве контента балуна задаем строку с адресом объекта.
-                        balloonContent: firstGeoObject.getAddressLine()
+                        // balloonContent: firstGeoObject.getAddressLine()
+                        balloonContent: firstGeoObject.geometry._coordinates.join(', ')
                     });
             });
         }

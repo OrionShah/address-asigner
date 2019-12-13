@@ -3,7 +3,7 @@
 from flask import Flask, jsonify, redirect, render_template, request
 from redis import Redis
 
-from app import tasks
+from app import tasks, utils
 from app.address import get_children, prepare_parents
 from app.population import get_region_link, get_uik_data
 from app.settings import REDIS_HOST
@@ -71,3 +71,8 @@ def uik(uikkey):
 def process_uik(uikkey):
     tasks.process_uik.delay(uikkey)
     return redirect(f'/{uikkey}')
+
+
+@app.route('/map')
+def map():
+    return render_template('debug.html')

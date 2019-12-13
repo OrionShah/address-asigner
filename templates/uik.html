@@ -17,14 +17,18 @@
 Жителей: {{ uik['people'] }}
 <br>
 Распределено: {{ uik['generated'] }}
+<br>
+
 <form method="POST" action="/{{ uikkey }}">
     <button type="submit">Обработать</button>
 </form>
+<br>
 <table>
     <thead>
     <tr>
         <th>#</th>
         <th>адрес</th>
+        <th>Координаты</th>
         <th>места</th>
         <th>жителей</th>
     </tr>
@@ -34,6 +38,7 @@
         <tr>
             <td>{{ house['i'] }}</td>
             <td>{{ house['address'] }}</td>
+            <td><a href="https://maps.yandex.ru/?text={{ ','.join(house['coords']) }}">{{ house['coords'] }}</a></td>
             <td>{{ house['place'] }}</td>
             <td>{{ house['people'] }}</td>
         </tr>

@@ -6,6 +6,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup
 from redis import Redis
 
+from app import utils
 from app.settings import REDIS_HOST, regions
 from app.utils import _get
 
@@ -175,10 +176,11 @@ def process_people(uikkey):
         last += addr_places
         generated += people
 
+        coords = utils.get_coords(addr)
         house = pickle.dumps({'address': addr, 'place': place,
-                              'people': people, 'i': i})
+                              'coords': coords, 'people': people, 'i': i})
         redis.rpush(f'addresses-processed-{uikkey}', house)
-        redis.set(f'address-{uikkey}', house)
+        redis.set(f'processed-address-{addr}', house)
         i += 1
 
     uik['places'] = sum([len(place) for place in addresses.values()])

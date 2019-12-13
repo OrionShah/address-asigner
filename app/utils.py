@@ -12,11 +12,11 @@ from app.settings import regions, REDIS_HOST
 Y_APIKEY = 'c811583b-f5cc-4274-9aa9-f4ae01a3cbfa'
 
 
-def _del_cache(url):
-    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
-    cachefile = Path(f'cache/{url_hash}.pickle')
-    if cachefile.exists():
-        os.remove(cachefile.absolute())
+# def _del_cache(url):
+#     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+#     cachefile = Path(f'cache/{url_hash}.pickle')
+#     if cachefile.exists():
+#         os.remove(cachefile.absolute())
 
 
 # def _get(url, update=False):
@@ -47,6 +47,13 @@ def _del_cache(url):
 #             pickle.dump(content, f)
 #     return content
 
+def _del_cache(url):
+    url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
+    redis_key = f'cache-{url_hash}'
+    redis = Redis(host=REDIS_HOST)
+    redis.delete(redis_key)
+
+
 def _get(url, update=False):
     url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
     redis_key = f'cache-{url_hash}'
@@ -62,29 +69,21 @@ def _get(url, update=False):
     return content
 
 
-def get_coords(detail_key):
-    redis = Redis(host=REDIS_HOST)
-    address = pickle.loads(redis.get(detail_key))
-
-    # TODO: проверять флаг в редисе и сразу переставлять задачу на начало суток
-
+def get_coords(address):
     pos = ()
-    params = urlencode({'apikey': Y_APIKEY, 'geocode': address['name'],
+    params = urlencode({'apikey': Y_APIKEY, 'geocode': address,
                         'format': 'json'})
     url = f'https://geocode-maps.yandex.ru/1.x/?{params}'
     response = _get(url).json()
     if 'response' not in response.keys():
         _del_cache(url)
-        # TODO: откладывать задачу до начало суток, выставлять флаг в редисе
-        raise Exception('Координаты не получены')
+        return pos
 
     member = response['response']['GeoObjectCollection']['featureMember']
     if len(member):
         pos = member[0]['GeoObject']['Point']['pos'].split(' ')
 
-    address.update({'coords': pos})
-    redis.set(detail_key, pickle.loads(address))
-
+    return pos[::-1]
 
 def get_uik(value):
     response = _get(f'http://www.cikrf.ru/services/lk_address/{value}?do=result').content.decode('CP1251')
