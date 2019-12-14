@@ -28,15 +28,6 @@ def save_address(self, value, address_components, **kwargs):
 
 
 @app.task(**params)
-def get_coords(self, address_str, **kwargs):
-    # добавить адресу координаты
-    try:
-        utils.get_coords(address_str)
-    except Exception as exc:
-        self.retry(exc=exc, countdown=60*12)
-
-
-@app.task(**params)
 def process_population(self, url, **kwargs):
     # собираем данные по жителям
     try:

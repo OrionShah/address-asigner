@@ -1,6 +1,8 @@
 """Точки входа для веба."""
+import pickle
+from functools import wraps
 
-from flask import Flask, jsonify, redirect, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, send_file
 from redis import Redis
 
 from app import tasks, utils
@@ -69,10 +71,92 @@ def uik(uikkey):
 
 @app.route('/<uikkey>', methods=['POST'])
 def process_uik(uikkey):
-    tasks.process_uik.delay(uikkey)
+    tasks.process_uik(uikkey)
     return redirect(f'/{uikkey}')
 
 
 @app.route('/map')
-def map():
+def map_debug():
     return render_template('debug.html')
+
+
+def support_jsonp(f):
+    """Wraps JSONified output for JSONP"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        callback = request.args.get('callback', False)
+        if callback:
+            content = (str(callback) + '(' + str(f()) + ')').replace('\'', '\"')
+            return app.response_class(content, mimetype='application/text')
+        else:
+            return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route('/datalayer/')
+@support_jsonp
+def datalayer():
+    tile_x = int(request.args['x'])
+    tile_y = int(request.args['y'])
+    zoom = int(request.args['z'])
+
+    redis = Redis(host=REDIS_HOST)
+    addrs = redis.keys(f'map-address-{zoom}-*')
+    resp = []
+
+    features = []
+    for addr in addrs:
+        addr = addr.decode('utf-8')
+        addr_components = addr.split('-')
+        # in_x = tile_x <= int(addr_components[3]) <= (tile_x + 256)
+        # in_y = tile_y <= int(addr_components[4]) <= (tile_y + 256)
+        in_x = tile_x == int(addr_components[3])
+        in_y = tile_y == int(addr_components[4])
+        if in_x and in_y:
+            resp.append(addr)
+            house = pickle.loads(redis.get(addr))
+            point = {
+                "type": "Feature",
+                "properties": {
+                    # "balloonContentBody": f"Жителей: {house['people']}",
+                    # "balloonContentHeader": house['address'],
+                    "balloonContent": f"Жителей: {house['people']}",
+
+                    # "id": addr_components[3] + addr_components[4] + str(random.randint(1, 100000)),
+                    "id": 1,
+                    "HotspotMetaData": {
+                        "RenderedGeometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [
+                                    [93, 137], [105, 108], [132, 103],
+                                    [153, 117], [162, 142],
+                                    [146, 162], [114, 162], [93, 137]
+                                ]
+                            ]
+                            # "type": "Polygon",
+                            # "coordinates": [
+                            #     [[0, 0], [10, 10], [10, 0], [0, 10]],
+                            #     [[0, 0], [10, 10], [10, 0], [0, 10]],
+                            # ]
+                        }
+                    }
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [house['coords']['lat'], house['coords']['lon']],
+                },
+                # "options": {
+                #     "preset": "islands#yellowIcon"
+                # }
+            }
+            features.append(point)
+
+    points = {"data": {"type": "FeatureCollection", "features": features}}
+    # return f'{callback}({json.dumps(points)})'
+    return points
+
+
+@app.route('/hotspot_layer/images/<zoom>/<img>.png')
+def img(zoom, img):
+    return send_file('tile.png')

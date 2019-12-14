@@ -38,7 +38,7 @@
         <tr>
             <td>{{ house['i'] }}</td>
             <td>{{ house['address'] }}</td>
-            <td><a href="https://maps.yandex.ru/?text={{ ','.join(house['coords']) }}">{{ house['coords'] }}</a></td>
+            <td><a href="https://maps.yandex.ru/?text={{ house['coords']['lat'] }},{{ house['coords']['lon'] }}">{{ house['coords'] }}</a></td>
             <td>{{ house['place'] }}</td>
             <td>{{ house['people'] }}</td>
         </tr>

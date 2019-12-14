@@ -177,10 +177,12 @@ def process_people(uikkey):
         generated += people
 
         coords = utils.get_coords(addr)
-        house = pickle.dumps({'address': addr, 'place': place,
-                              'coords': coords, 'people': people, 'i': i})
-        redis.rpush(f'addresses-processed-{uikkey}', house)
-        redis.set(f'processed-address-{addr}', house)
+        house = {'address': addr, 'place': place,
+                              'coords': coords, 'people': people, 'i': i}
+        redis.rpush(f'addresses-processed-{uikkey}', pickle.dumps(house))
+        redis.set(f'processed-address-{addr}', pickle.dumps(house))
+        save_to_map(house)
+
         i += 1
 
     uik['places'] = sum([len(place) for place in addresses.values()])
@@ -205,3 +207,12 @@ def get_uik_info(uik, region):
 
     redis = Redis(host=REDIS_HOST)
     redis.set(f'uik-{uik}', pickle.dumps(data))
+
+
+def save_to_map(house):
+    redis = Redis(host=REDIS_HOST)
+    for zoom in [14, 15, 16, 17, 18]:
+        x = int(round(utils.long2tile_x(house['coords']['lon'], zoom), 0))
+        y = int(round(utils.lat2tile_y(house['coords']['lat'], zoom), 0))
+        redis_key = f'map-address-{zoom}-{x}-{y}-{house["address"]}'
+        redis.set(redis_key, pickle.dumps(house))

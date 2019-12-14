@@ -1,4 +1,5 @@
 import hashlib
+import math
 import os
 import pickle
 from pathlib import Path
@@ -70,7 +71,7 @@ def _get(url, update=False):
 
 
 def get_coords(address):
-    pos = ()
+    pos = {'lat': None, 'lon': None}
     params = urlencode({'apikey': Y_APIKEY, 'geocode': address,
                         'format': 'json'})
     url = f'https://geocode-maps.yandex.ru/1.x/?{params}'
@@ -82,8 +83,10 @@ def get_coords(address):
     member = response['response']['GeoObjectCollection']['featureMember']
     if len(member):
         pos = member[0]['GeoObject']['Point']['pos'].split(' ')
+        pos = {'lat': float(pos[1]), 'lon': float(pos[0])}
 
-    return pos[::-1]
+    return pos
+
 
 def get_uik(value):
     response = _get(f'http://www.cikrf.ru/services/lk_address/{value}?do=result').content.decode('CP1251')
@@ -94,3 +97,19 @@ def get_uik(value):
     end = response[start:].find('<')
     uik = response[start+len(substr):start+end]
     return int(uik)
+
+
+def lat2tile_y(lat, z):  # lat=широта в градусах, z=масштаб
+    lat = lat * math.pi / 180.0  # радианы = градусы * ПИ / 180
+    a = 6378137
+    k = 0.0818191908426
+    z1 = math.tan(math.pi / 4 + lat / 2) / pow(math.tan(math.pi / 4 + math.asin(k * math.sin(lat)) / 2) , k)
+    pix_y = round((20037508.342789 - a * math.log(z1)) * 53.5865938 / pow(2, 23 - z))
+    return pix_y / 256
+
+
+def long2tile_x(lon, z):  # lon=долгота в градусах, z=масштаб
+    lon = lon * math.pi / 180.0  # //радианы = градусы * ПИ / 180
+    a = 6378137
+    pix_x = round((20037508.342789 + a * lon) * 53.5865938 / pow(2.0, 23 - z))
+    return pix_x / 256
