@@ -51,7 +51,11 @@
         // Добавляем слои на карту.
         myMap.layers.add(hotspotLayer);
         myMap.layers.add(imgLayer);
-
+myMap.layers.add(new ymaps.Layer(
+    'http://tile.openstreetmap.org/%z/%x/%y.png', {
+       projection: ymaps.projection.sphericalMercator
+   }));
+   myMap.copyrights.add('© OpenStreetMap contributors, CC-BY-SA');
         myMap.events.add('click', function (e) {
             var coords = e.get('coords');
 
