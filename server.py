@@ -122,8 +122,8 @@ def datalayer():
                     # "balloonContentHeader": house['address'],
                     "balloonContent": f"Жителей: {house['people']}",
 
-                    # "id": addr_components[3] + addr_components[4] + str(random.randint(1, 100000)),
-                    "id": 1,
+                    "id": addr_components[3] + addr_components[4] + str(random.randint(1, 100000)),
+                    # "id": 1,
                     "HotspotMetaData": {
                         "RenderedGeometry": {
                             "type": "Polygon",
