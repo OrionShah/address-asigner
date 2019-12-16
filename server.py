@@ -88,7 +88,7 @@ def support_jsonp(f):
         callback = request.args.get('callback', False)
         if callback:
             content = (str(callback) + '(' + str(f()) + ')').replace('\'', '\"')
-            return app.response_class(content, mimetype='application/json')
+            return app.response_class(content, mimetype='text/javascript')
         else:
             return f(*args, **kwargs)
     return decorated_function
