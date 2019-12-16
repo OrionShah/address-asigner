@@ -1,5 +1,6 @@
 """Точки входа для веба."""
 import pickle
+import random
 from functools import wraps
 
 from flask import Flask, jsonify, redirect, render_template, request, send_file
