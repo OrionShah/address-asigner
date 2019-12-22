@@ -52,26 +52,18 @@
         // Создаем картиночный слой и слой активных областей.
         //imgLayer = new ymaps.Layer(imgUrlTemplate, {tileTransparent: true}),
         hotspotLayer = new ymaps.hotspot.Layer(objSource, {cursor: 'help'});
-		loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
-            // Включаем кластеризацию.
-            clusterize: true,
-            // Зададим опции кластерам.
-            // Опции кластеров задаются с префиксом cluster.
-            clusterHasBalloon: false,
-            // Опции объектов задаются с префиксом geoObject.
-            geoObjectOpenBalloonOnClick: false
-        });
+		
     var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {   
     // Включаем кластеризацию.
     clusterize: true,
     // Зададим опции кластерам.
     // Опции кластеров задаются с префиксом cluster.
-    clusterHasBalloon: false,
+    clusterHasBalloon: true,
     // Опции объектов задаются с префиксом geoObject.
-    geoObjectOpenBalloonOnClick: false
-});
+    geoObjectOpenBalloonOnClick: true
+    });
         // Добавляем слои на карту.
-        //myMap.layers.add(hotspotLayer);
+        myMap.layers.add(hotspotLayer);
        // myMap.layers.add(imgLayer);
         myMap.geoObjects.add(loadingObjectManager);
         myMap.events.add('click', function (e) {
