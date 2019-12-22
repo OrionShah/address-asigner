@@ -124,17 +124,10 @@ def datalayer():
                     "balloonContent": f"Жителей: {house['people']}",
 
                     "id": addr_components[3] + addr_components[4] + str(random.randint(1, 100000)),
-                    # "id": 1,
                     "HotspotMetaData": {
                         "RenderedGeometry": {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [93, 137], [105, 108], [132, 103],
-                                    [153, 117], [162, 142],
-                                    [146, 162], [114, 162], [93, 137]
-                                ]
-                            ]
+                            "type": "Point",
+                            "coordinates": [house['coords']['lat'], house['coords']['lon']],
                             # "type": "Polygon",
                             # "coordinates": [
                             #     [[0, 0], [10, 10], [10, 0], [0, 10]],
