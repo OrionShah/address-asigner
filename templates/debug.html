@@ -32,23 +32,14 @@
 
      //var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
 
-     var tileUrlTemplate = 'datalayer/?z=%z&t=%t',         
-         keyTemplate = 'addrs_%c',         
-         imgUrlTemplate = 'hotspot_layer/images/%z/tile_x=%x&y=%y.png',
-         objSource = new ymaps.hotspot.ObjectSource(tileUrlTemplate, keyTemplate),         
-         imgLayer = new ymaps.Layer(imgUrlTemplate, {tileTransparent: true}),
-         hotspotLayer = new ymaps.hotspot.Layer(objSource, {
-             cursor: 'help'
-         });
-
-     var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
+     var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
+        loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
          // Включаем кластеризацию.
          clusterize: true,
          clusterHasBalloon: true,
          geoObjectOpenBalloonOnClick: true
      });
-    
-     myMap.layers.add(hotspotLayer);    
+
      myMap.geoObjects.add(loadingObjectManager);
 
  }
