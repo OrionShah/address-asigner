@@ -136,10 +136,10 @@ def datalayer():
                         }
                     }
                 },
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": [house['coords']['lat'], house['coords']['lon']],
-                },
+                # "geometry": {
+                #     "type": "Point",
+                #     "coordinates": [house['coords']['lat'], house['coords']['lon']],
+                # },
                 # "options": {
                 #     "preset": "islands#yellowIcon"
                 # }
