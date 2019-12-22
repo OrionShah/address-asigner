@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=c811583b-f5cc-4274-9aa9-f4ae01a3cbfa&lang=ru_RU" type="text/javascript"></script>
     <meta charset="UTF-8">
     <title>Debug</title>
@@ -8,6 +9,28 @@
         #map {
             margin: 50px auto;
         }
+		.outercluster {
+	position: absolute;
+	left: -25px;
+	top: -25px;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	background: #FFFFFF;
+	border: 0;
+	padding-top: 2px;
+}
+
+.cluster {
+	border-radius: 50%;
+	width: 46px;
+	height: 46px;
+	background: #FFFFFF;
+	border: 6px solid orange;
+	text-align: center;
+	padding-top: 5px;
+	margin-left: 2px;
+}
     </style>
 </head>
 <body>
@@ -35,7 +58,27 @@
      var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
          // Включаем кластеризацию.
-         clusterize: true,
+		 clusterize: true,
+		 preset: 'islands#invertedVioletClusterIcons',
+		 //
+        clusterIconLayout:  ymaps.templateLayoutFactory.createClass('<div class="outercluster"><div class="cluster" id="counter-$[id]"></div></div>',{
+			build: function () {
+				this.constructor.superclass.build.call(this);
+				i=0;
+				for(o in this.getData().properties.geoObjects)
+				{
+					i+=parseInt(this.getData().properties.geoObjects[o].properties.iconContent);
+				}				
+				$('#counter-'+this.getData().id).html(i);
+			}
+		}),
+		clusterIconShape: {
+			type: 'Circle',//максимально похоже на islands#orangeClusterIcons
+			coordinates: [0, 0],
+			radius: 25//в зависимости от css размеров
+		},	 
+		 //
+         
          clusterHasBalloon: true,
          geoObjectOpenBalloonOnClick: true
      });
