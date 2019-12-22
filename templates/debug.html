@@ -36,7 +36,12 @@
             maxZoom: 18
         });
 
-        var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
+
+        //var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
+
+
+        var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
+       
 
         // Шаблон callback-функции, в которую сервер будет оборачивать данные тайла.
         // Пример callback-функции после подстановки - 'testCallback_tile_x_1_y_2_z_9'.
@@ -45,9 +50,18 @@
         imgUrlTemplate = 'hotspot_layer/images/%z/tile_x=%x&y=%y.png',
         objSource = new ymaps.hotspot.ObjectSource(tileUrlTemplate, keyTemplate),
         // Создаем картиночный слой и слой активных областей.
-        imgLayer = new ymaps.Layer(imgUrlTemplate, {tileTransparent: true}),
+        //imgLayer = new ymaps.Layer(imgUrlTemplate, {tileTransparent: true}),
         hotspotLayer = new ymaps.hotspot.Layer(objSource, {cursor: 'help'});
-var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {   
+		loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
+            // Включаем кластеризацию.
+            clusterize: true,
+            // Зададим опции кластерам.
+            // Опции кластеров задаются с префиксом cluster.
+            clusterHasBalloon: false,
+            // Опции объектов задаются с префиксом geoObject.
+            geoObjectOpenBalloonOnClick: false
+        });
+    var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {   
     // Включаем кластеризацию.
     clusterize: true,
     // Зададим опции кластерам.

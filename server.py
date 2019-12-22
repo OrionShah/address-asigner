@@ -97,60 +97,43 @@ def support_jsonp(f):
 @app.route('/datalayer/')
 @support_jsonp
 def datalayer():
-    tile_x = int(request.args['x'])
-    tile_y = int(request.args['y'])
     zoom = int(request.args['z'])
-
-    redis = Redis(host=REDIS_HOST)
-    addrs = redis.keys(f'map-address-{zoom}-*')
-    resp = []
-
+    tiles = request.args['t'].split(',')
+    x_tiles = list(range(int(tiles[0]), int(tiles[2])))
+    y_tiles = list(range(int(tiles[1]), int(tiles[3])))
     features = []
-    for addr in addrs:
-        addr = addr.decode('utf-8')
-        addr_components = addr.split('-')
-        # in_x = tile_x <= int(addr_components[3]) <= (tile_x + 256)
-        # in_y = tile_y <= int(addr_components[4]) <= (tile_y + 256)
-        in_x = tile_x == int(addr_components[3])
-        in_y = tile_y == int(addr_components[4])
-        if in_x and in_y:
-            resp.append(addr)
-            house = pickle.loads(redis.get(addr))
-            point = {
-                "type": "Feature",
-                "properties": {
-                    # "balloonContentBody": f"Жителей: {house['people']}",
-                    # "balloonContentHeader": house['address'],
-                    "balloonContent": f"Жителей: {house['people']}",
-
-                    "id": addr_components[3] + addr_components[4] + str(random.randint(1, 100000)),
-                    "HotspotMetaData": {
-                        "RenderedGeometry": {
-                            "type": "Point",
-                            "coordinates": [house['coords']['lat'], house['coords']['lon']],
-                            # "type": "Polygon",
-                            # "coordinates": [
-                            #     [[0, 0], [10, 10], [10, 0], [0, 10]],
-                            #     [[0, 0], [10, 10], [10, 0], [0, 10]],
-                            # ]
-                        }
-                    }
-                },
-                # "geometry": {
-                #     "type": "Point",
-                #     "coordinates": [house['coords']['lat'], house['coords']['lon']],
-                # },
-                # "options": {
-                #     "preset": "islands#yellowIcon"
-                # }
-            }
-            features.append(point)
-
+    for x, y in dict(zip(x_tiles, y_tiles)).items():
+        features.extend(get_data_for_tile(x, y, zoom))
     points = {"data": {"type": "FeatureCollection", "features": features}}
-    # return f'{callback}({json.dumps(points)})'
     return points
 
 
 @app.route('/hotspot_layer/images/<zoom>/<img>.png')
 def img(zoom, img):
     return send_file('tile.png')
+
+
+def get_data_for_tile(tile_x, tile_y, zoom):
+    redis = Redis(host=REDIS_HOST)
+    addrs = redis.keys(f'map-address-{zoom}-{tile_x}-{tile_y}*')
+    features = []
+    for addr in addrs:
+        addr = addr.decode('utf-8')
+        addr_components = addr.split('-')
+        house = pickle.loads(redis.get(addr))
+        point = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [house['coords']['lat'],
+                                house['coords']['lon']],
+            },
+            "id": addr_components[3] + addr_components[4] + str(
+                random.randint(1, 100000)),
+            "properties": {
+                "balloonContent": f"Жителей: {house['people']}",
+                "iconContent": house['people']
+            }
+        }
+        features.append(point)
+    return features
