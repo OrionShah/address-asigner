@@ -5,14 +5,39 @@
     <meta charset="UTF-8">
     <title>Debug</title>
     <style>
+	.outercluster {
+	position: absolute;
+	left: -25px;
+	top: -25px;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	background: #FFFFFF;
+	border: 0;
+	padding-top: 2px;
+}
+
+.cluster {
+	border-radius: 50%;
+	width: 46px;
+	height: 46px;
+	background: #FFFFFF;
+	border: 6px solid orange;
+	text-align: center;
+	padding-top: 5px;
+	margin-left: 2px;
+}
         #map {
             margin: 50px auto;
+			height:800px;
+			max-width:800px;
+			width:100%;
         }
     </style>
 </head>
 <body>
 
-<div id="map" style="width: 800px; height: 800px"></div>
+<div id="map"></div>
 
 <script type="text/javascript">
     // Функция ymaps.ready() будет вызвана, когда
@@ -56,10 +81,28 @@
     var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {   
     // Включаем кластеризацию.
     clusterize: true,
-    // Зададим опции кластерам.
-    // Опции кластеров задаются с префиксом cluster.
+   //пробуем суммировать контент меток
+   
+   clusterIconLayout:  ymaps.templateLayoutFactory.createClass('<div class="outercluster"><div class="cluster" id="counter-$[id]"></div></div>',{
+			build: function () {
+				this.constructor.superclass.build.call(this);
+				i=0;
+				for(o in this.getData().properties.geoObjects)
+				{
+					i+=parseInt(this.getData().properties.geoObjects[o].properties.iconContent);
+				}				
+				$('#counter-'+this.getData().id).html(i);
+			}
+		}),
+		clusterIconShape: {
+			type: 'Circle',//максимально похоже на islands#orangeClusterIcons
+			coordinates: [0, 0],
+			radius: 25//в зависимости от css размеров
+		},
+   
+   //закончили пробовать
     clusterHasBalloon: true,
-    // Опции объектов задаются с префиксом geoObject.
+    
     geoObjectOpenBalloonOnClick: true
     });
         // Добавляем слои на карту.
