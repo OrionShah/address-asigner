@@ -4,9 +4,13 @@
     <script src="https://api-maps.yandex.ru/2.1/?apikey=c811583b-f5cc-4274-9aa9-f4ae01a3cbfa&lang=ru_RU" type="text/javascript"></script>
     <meta charset="UTF-8">
     <title>Debug</title>
-    <style>
+
+	<style>
         #map {
             margin: 50px auto;
+			max-width:800px;
+			height:800px;
+			width:100%;
         }
 		.outercluster {
 	position: absolute;
@@ -21,20 +25,22 @@
 }
 
 .cluster {
+font-family:'Arial';
 	border-radius: 50%;
 	width: 46px;
-	height: 46px;
+	height: 40px;
 	background: #FFFFFF;
-	border: 6px solid orange;
+	border: 6px solid #1e98ff;
 	text-align: center;
 	padding-top: 5px;
 	margin-left: 2px;
+    line-height:2.2;
 }
     </style>
 </head>
 <body>
 
-<div id="map" style="width: 800px; height: 800px"></div>
+<div id="map"></div>
 
 <script type="text/javascript">
     // Функция ymaps.ready() будет вызвана, когда
