@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=c811583b-f5cc-4274-9aa9-f4ae01a3cbfa&lang=ru_RU" type="text/javascript"></script>
     <meta charset="UTF-8">
     <title>Debug</title>
@@ -44,8 +43,7 @@
 
  function init() {
      // Создание карты.
-     var myPlacemark,
-         myMap = new ymaps.Map("map", {            
+     var myMap = new ymaps.Map("map", {
              center: [48.76, 44.55],             
              zoom: 15
          }, {
@@ -68,8 +66,8 @@
 				for(o in this.getData().properties.geoObjects)
 				{
 					i+=parseInt(this.getData().properties.geoObjects[o].properties.iconContent);
-				}				
-				$('#counter-'+this.getData().id).html(i);
+				}
+				document.getElementById('counter-'+this.getData().id).innerHTML = i;
 			}
 		}),
 		clusterIconShape: {
