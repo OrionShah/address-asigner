@@ -57,9 +57,9 @@ var loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
         hotspotLayer = new ymaps.hotspot.Layer(objSource, {cursor: 'help'});
 
         // Добавляем слои на карту.
-        myMap.layers.add(hotspotLayer);
-        myMap.layers.add(imgLayer);
-myMap.geoObjects.add(loadingObjectManager);
+        //myMap.layers.add(hotspotLayer);
+       // myMap.layers.add(imgLayer);
+        myMap.geoObjects.add(loadingObjectManager);
         myMap.events.add('click', function (e) {
             var coords = e.get('coords');
 
