@@ -36,7 +36,7 @@
             maxZoom: 18
         });
 
-        var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
+        var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
             // Включаем кластеризацию.
             clusterize: true,
