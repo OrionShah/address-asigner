@@ -108,9 +108,9 @@ def datalayer():
     return points
 
 
-@app.route('/hotspot_layer/images/<zoom>/<img>.png')
-def img(zoom, img):
-    return send_file('tile.png')
+@app.route('/iamges/man.png')
+def img():
+    return send_file('man.png')
 
 
 def get_data_for_tile(tile_x, tile_y, zoom):
@@ -132,7 +132,13 @@ def get_data_for_tile(tile_x, tile_y, zoom):
                 random.randint(1, 100000)),
             "properties": {
                 "balloonContent": f"Адрес: {house['address']} \n Жителей: {house['people']}",
-                "iconContent": house['people']
+                "iconContent": house['people'],
+
+                'iconLayout': 'default#imageWithContent',
+                'iconImageHref': 'images/ball.png',
+                'iconImageSize': [48, 48],
+                'iconImageOffset': [-24, -24],
+                'iconContentOffset': [15, 15],
             }
         }
         features.append(point)
