@@ -130,6 +130,9 @@ def get_data_for_tile(tile_x, tile_y, zoom):
             },
             "id": addr_components[3] + addr_components[4] + str(
                 random.randint(1, 100000)),
+			MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
+            '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
+            ),
             "properties": {
                 "balloonContent": f"Адрес: {house['address']} \n Жителей: {house['people']}",
                 "iconContent": house['people'],

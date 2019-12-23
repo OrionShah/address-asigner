@@ -58,13 +58,13 @@ font-family:'Arial';
          });
 
      //var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
- MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
-            '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
-        );
+// MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
+ //           '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
+ //       );
      var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
          // Включаем кластеризацию.
-		 iconLayout: 'default#imageWithContent',
+		/* iconLayout: 'default#imageWithContent',
 // Своё изображение иконки метки.
 iconImageHref: 'men.png',
 // Размеры метки.
@@ -75,7 +75,7 @@ iconImageOffset: [-24, -24],
 // Смещение слоя с содержимым относительно слоя с картинкой.
 iconContentOffset: [15, 15],
 // Макет содержимого.
-iconContentLayout: MyIconContentLayout,
+iconContentLayout: MyIconContentLayout,*/
 
 		 clusterize: true,
 		 preset: 'islands#invertedVioletClusterIcons',
