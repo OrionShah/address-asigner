@@ -67,14 +67,20 @@ font-family:'Arial';
 		 clusterize: true,
 		 preset: 'islands#invertedVioletClusterIcons',
 		 //
-        clusterIconLayout:  ymaps.templateLayoutFactory.createClass('<div class="outercluster"><div class="cluster" id="counter-$[id]"></div></div>',{
+		 balloonIconLayout: 'default#imageWithContent',
+                balloonIconImageHref: 'images/ball.png',
+                balloonIconImageSize: [48, 48],
+                balloonIconImageOffset: [-24, -24],
+                balloonIconContentOffset: [15, 15],
+                balloonIconContentLayout: ymaps.templateLayoutFactory.createClass('<div class="balloon_text" style="color: #FFFFFF; font-weight:bold;">$[properties.iconContent]</div>');
+		   clusterIconLayout:  ymaps.templateLayoutFactory.createClass('<div class="outercluster"><div class="cluster" id="counter-$[id]"></div></div>',{
 			build: function () {
 				this.constructor.superclass.build.call(this);
 				i=0;
 				for(o in this.getData().properties.geoObjects)
 				{
 					i+=parseInt(this.getData().properties.geoObjects[o].properties.iconContent);
-					MyIconContentLayout = ymaps.templateLayoutFactory.createClass('<div style="color: #FFFFFF; font-weight:bold;">$[properties.iconContent]</div>');
+					 
 				}
 				document.getElementById('counter-'+this.getData().id).innerHTML = i;
 			}

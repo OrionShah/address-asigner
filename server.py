@@ -134,11 +134,11 @@ def get_data_for_tile(tile_x, tile_y, zoom):
                 "balloonContent": f"Адрес: {house['address']} \n Жителей: {house['people']}",
                 "iconContent": house['people'],
 
-                'iconLayout': 'default#imageWithContent',
-                'iconImageHref': 'images/ball.png',
-                'iconImageSize': [48, 48],
-                'iconImageOffset': [-24, -24],
-                'iconContentOffset': [15, 15],
+                #'iconLayout': 'default#imageWithContent',
+               # 'iconImageHref': 'images/ball.png',
+                #'iconImageSize': [48, 48],
+                #'iconImageOffset': [-24, -24],
+                #'iconContentOffset': [15, 15],
             }
         }
         features.append(point)
