@@ -58,10 +58,25 @@ font-family:'Arial';
          });
 
      //var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
-
+ MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
+            '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
+        ),
      var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
          // Включаем кластеризацию.
+		 iconLayout: 'default#imageWithContent',
+// Своё изображение иконки метки.
+iconImageHref: 'men.png',
+// Размеры метки.
+iconImageSize: [48, 48],
+// Смещение левого верхнего угла иконки относительно
+// её "ножки" (точки привязки).
+iconImageOffset: [-24, -24],
+// Смещение слоя с содержимым относительно слоя с картинкой.
+iconContentOffset: [15, 15],
+// Макет содержимого.
+iconContentLayout: MyIconContentLayout,
+
 		 clusterize: true,
 		 preset: 'islands#invertedVioletClusterIcons',
 		 //
@@ -80,7 +95,7 @@ font-family:'Arial';
 			type: 'Circle',//максимально похоже на islands#orangeClusterIcons
 			coordinates: [0, 0],
 			radius: 25//в зависимости от css размеров
-		},	 
+		},	    
 		 //
          
          clusterHasBalloon: true,
