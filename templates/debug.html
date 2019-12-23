@@ -60,7 +60,7 @@ font-family:'Arial';
      //var tileUrlTemplate = 'datalayer/?x=%x&y=%y&z=%z',
  MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
             '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
-        ),
+        );
      var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
          // Включаем кластеризацию.
