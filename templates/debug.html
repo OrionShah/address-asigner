@@ -36,6 +36,7 @@ font-family:'Arial';
 	margin-left: 2px;
     line-height:2.2;
 }
+.ballon_text{color: #FFFFFF; font-weight: bold;}
     </style>
 </head>
 <body>
@@ -61,6 +62,9 @@ font-family:'Arial';
 // MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
  //           '<div style="color: #FFFFFF; font-weight: bold;">$[properties.iconContent]</div>'
  //       );
+  MyIconContentLayout = ymaps.templateLayoutFactory.createClass(
+            '<div class="ballon_text" >$[properties.iconContent]</div>'
+        );
         var tileUrlTemplate = 'datalayer/?z=%z&t=%t',
 	 
         loadingObjectManager = new ymaps.LoadingObjectManager(tileUrlTemplate, {
@@ -89,7 +93,15 @@ font-family:'Arial';
          clusterHasBalloon: true,
          geoObjectOpenBalloonOnClick: true
      });
-
+    loadingObjectManager.objects.options.set({
+         'geoObjecticonLayout': 'default#imageWithContent',
+         'geoObjecticonImageSize': [25, 60],          
+         'geoObjecticonImageOffset': [-24, -24],
+         'geoObjecticonContentOffset': [15, 15],
+         'geoObjecticonContentLayout': MyIconContentLayout,
+         'geoObjecticonImageHref': 'men.png'         
+         
+     });
      myMap.geoObjects.add(loadingObjectManager);
 
  }
