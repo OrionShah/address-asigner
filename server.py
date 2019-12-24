@@ -131,7 +131,7 @@ def get_data_for_tile(tile_x, tile_y, zoom):
             "id": addr_components[3] + addr_components[4] + str(
                 random.randint(1, 100000)),
             "properties": {
-                "balloonContent": f"Адрес: {house['address']} \n Жителей: {house['people']}",
+                "balloonContent": f"Адрес: {house['address']} <br/> Жителей: {house['people']}",
                 "iconContent": house['people'],
             }
         }

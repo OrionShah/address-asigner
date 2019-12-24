@@ -37,6 +37,25 @@ font-family:'Arial';
     line-height:2.2;
 }
 .ballon_text{color: #FFFFFF; font-weight: bold;}
+#modal {
+     visibility: hidden;
+     position: absolute;
+     left: 0px;
+     top: 0px;
+     width:100%;
+     height:100%;
+     text-align:center;
+     z-index: 1000;
+     
+}
+#modal div {
+     width:300px;
+     margin: 100px auto;
+     background-color: #fff;
+     border:1px solid #000;
+     padding:15px;
+     text-align:center;
+}
     </style>
 </head>
 <body>
@@ -94,18 +113,28 @@ font-family:'Arial';
          geoObjectOpenBalloonOnClick: true
      });
     loadingObjectManager.objects.options.set({
-         'geoObjectIconLayout': 'default#imageWithContent',
-         'geoObjectIconImageSize': [25, 60],          
-         'geoObjectIconImageOffset': [-24, -24],
-         'geoObjectIconContentOffset': [15, 15],
-         'geoObjectIconContentLayout': MyIconContentLayout,
-         'geoObjectIconImageHref': 'men.png'         
+         'iconLayout': 'default#imageWithContent',
+         'iconImageSize': [25, 60],          
+         'iconImageOffset': [-24, -24],
+         'iconContentOffset': [15, 15],
+         'iconContentLayout': MyIconContentLayout,
+         'iconImageHref': 'men.png'         
          
      });
      myMap.geoObjects.add(loadingObjectManager);
 
  }
 </script>
-
+<div id="modal">
+     <div>
+          <p>Карта показывает количество жителей в домах.</p>
+     </div>
+</div>
+<script>
+function modal() {
+	el = document.getElementById("modal");
+	el.style.visibility = (el.style.visibility == "visible") ? "hidden" : "visible";
+}
+</script>
 </body>
 </html>
