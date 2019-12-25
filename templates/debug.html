@@ -103,7 +103,9 @@ font-family:'Arial';
      // Создание карты.
      myMap = new ymaps.Map("map", {
              center: [48.76, 44.55],             
-             zoom: 15
+             zoom: 15,
+			     controls: ['zoomControl', 'searchControl', 'typeSelector']
+        
          }, {
              minZoom: 14,
              maxZoom: 18
