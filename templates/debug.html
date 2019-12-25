@@ -10,7 +10,7 @@
 	margin:0px;
 	}
     #map {
-     margin: 50px auto; */
+     /*margin: 50px auto; */
     /* max-width: 800px; */
     height: 100%;
     width: 100%;
@@ -65,7 +65,7 @@ font-family:'Arial';
 }
 #modal div {
      max-width:300px;
-	 width:100%
+	 width:100%;
      margin: 100px auto;
      background-color: #fff;
      border:1px solid #000;
@@ -149,7 +149,7 @@ font-family:'Arial';
          'iconImageOffset': [-24, -24],
          'iconContentOffset': [15, 15],
          'iconContentLayout': MyIconContentLayout,
-         'iconImageHref': 'man.png'
+         'iconImageHref': 'men.png'         
          
      });
      myMap.geoObjects.add(loadingObjectManager);
@@ -165,7 +165,7 @@ font-family:'Arial';
 <script>
 function modal() {
 	el = document.getElementById("modal");
-	el.style.visibility = (el.style.visibility == "block") ? "none" : "block";
+	el.style.display = (el.style.display == "block") ? "none" : "block";
 }
 </script>
 </body>
