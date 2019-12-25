@@ -108,7 +108,7 @@ def datalayer():
     return points
 
 
-@app.route('/iamges/man.png')
+@app.route('/man.png')
 def img():
     return send_file('man.png')
 
