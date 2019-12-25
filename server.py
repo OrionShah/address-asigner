@@ -109,6 +109,7 @@ def datalayer():
 
 
 @app.route('/man.png')
+@app.route('/men.png')
 def img():
     return send_file('man.png')
 
