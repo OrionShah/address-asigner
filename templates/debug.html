@@ -10,7 +10,7 @@
 	margin:0px;
 	}
     #map {
-     /*margin: 50px auto; */
+     margin:  auto; 
      max-width: 800px; 
     height: 100%;
     width: 100%;
@@ -101,7 +101,7 @@ font-family:'Arial';
 
  function init() {
      // Создание карты.
-     var myMap = new ymaps.Map("map", {
+     myMap = new ymaps.Map("map", {
              center: [48.76, 44.55],             
              zoom: 15
          }, {
@@ -146,7 +146,7 @@ font-family:'Arial';
      });
     loadingObjectManager.objects.options.set({
          'iconLayout': 'default#imageWithContent',
-         'iconImageSize': [25, 60],          
+         'iconImageSize': [13, 30],          
          'iconImageOffset': [-24, -24],
          'iconContentOffset': [15, 15],
          'iconContentLayout': MyIconContentLayout,
@@ -155,7 +155,6 @@ font-family:'Arial';
      });
      myMap.geoObjects.add(loadingObjectManager);
 
- }
 </script>
 <div id="modal" style="display:block;">
      <div>
@@ -172,6 +171,7 @@ function fullMaps(){
 var fullscreenControl = new ymaps.control.FullscreenControl();
 myMap.controls.add(fullscreenControl);
 fullscreenControl.enterFullscreen();
+ }
 }
 </script>
 </body>
